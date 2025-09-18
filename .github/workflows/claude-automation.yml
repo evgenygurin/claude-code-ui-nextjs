@@ -57,10 +57,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          # Temporarily disabled cache until package-lock.json is added
+          # cache: 'npm'
           
       - name: Install dependencies
-        run: npm ci
+        run: npm install
         
       - name: Claude Automated Tasks
         uses: anthropics/claude-code-action@v1
