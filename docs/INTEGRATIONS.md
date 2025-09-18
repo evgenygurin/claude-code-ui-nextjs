@@ -35,7 +35,9 @@ Complete integration setup for Claude Code UI with GitHub, CircleCI, Sentry, and
 ### 3. **Sentry** - Error Tracking & Monitoring
 - **Config Files**:
   - `instrumentation.ts` - Server-side initialization
-  - `instrumentation-client.ts` - Client-side initialization
+  - `sentry.client.config.ts` - Client-side initialization
+  - `sentry.server.config.ts` - Server configuration
+  - `sentry.edge.config.ts` - Edge runtime configuration
   - `app/global-error.tsx` - Global error boundary
 - **Features**:
   - Real-time error capture
