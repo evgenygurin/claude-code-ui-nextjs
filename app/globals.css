@@ -1,0 +1,289 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 94.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* Font variables */
+  html {
+    --font-geist-sans: 'Geist Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-geist-mono: 'Geist Mono', ui-monospace, 'SF Mono', monospace;
+  }
+}
+
+@layer components {
+  /* Terminal styles */
+  .terminal {
+    @apply font-mono text-sm leading-relaxed;
+    font-feature-settings: 'liga' 0;
+  }
+
+  .terminal .xterm {
+    @apply h-full w-full;
+  }
+
+  .terminal .xterm-viewport {
+    @apply bg-transparent;
+  }
+
+  .terminal .xterm-screen {
+    @apply bg-transparent;
+  }
+
+  /* Code editor styles */
+  .code-editor {
+    @apply h-full w-full overflow-hidden rounded-md border;
+  }
+
+  .code-editor .cm-editor {
+    @apply h-full;
+  }
+
+  .code-editor .cm-scroller {
+    @apply font-mono text-sm;
+  }
+
+  .code-editor .cm-focused {
+    @apply outline-none;
+  }
+
+  /* Chat styles */
+  .chat-message {
+    @apply mb-4 flex w-full flex-col gap-2;
+  }
+
+  .chat-message.user {
+    @apply items-end;
+  }
+
+  .chat-message.assistant {
+    @apply items-start;
+  }
+
+  .chat-message-content {
+    @apply max-w-[80%] rounded-lg px-4 py-2;
+  }
+
+  .chat-message.user .chat-message-content {
+    @apply bg-primary text-primary-foreground;
+  }
+
+  .chat-message.assistant .chat-message-content {
+    @apply bg-muted text-muted-foreground;
+  }
+
+  /* File tree styles */
+  .file-tree {
+    @apply text-sm;
+  }
+
+  .file-tree-item {
+    @apply flex cursor-pointer items-center gap-2 rounded px-2 py-1 hover:bg-accent;
+  }
+
+  .file-tree-item.selected {
+    @apply bg-accent text-accent-foreground;
+  }
+
+  .file-tree-item.expanded > .file-tree-icon {
+    @apply rotate-90;
+  }
+
+  /* Sidebar styles */
+  .sidebar {
+    @apply flex h-full w-64 flex-col border-r bg-card text-card-foreground;
+  }
+
+  .sidebar-header {
+    @apply flex h-14 items-center border-b px-4;
+  }
+
+  .sidebar-content {
+    @apply flex-1 overflow-auto p-4;
+  }
+
+  .sidebar-footer {
+    @apply border-t p-4;
+  }
+
+  /* Loading states */
+  .loading-spinner {
+    @apply h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent;
+  }
+
+  .loading-dots::after {
+    @apply inline-block w-4 animate-pulse content-['...'];
+  }
+
+  /* Custom scrollbar */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground)) transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    @apply w-2;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-muted-foreground/20;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/40;
+  }
+
+  /* Animations */
+  .fade-in {
+    @apply animate-fade-in;
+  }
+
+  .slide-in {
+    @apply animate-slide-in;
+  }
+
+  .slide-up {
+    @apply animate-slide-up;
+  }
+
+  /* Syntax highlighting fallback */
+  .hljs {
+    @apply bg-muted text-muted-foreground;
+  }
+
+  .hljs-keyword {
+    @apply text-purple-600 dark:text-purple-400;
+  }
+
+  .hljs-string {
+    @apply text-green-600 dark:text-green-400;
+  }
+
+  .hljs-comment {
+    @apply text-gray-500 dark:text-gray-400;
+  }
+
+  .hljs-number {
+    @apply text-blue-600 dark:text-blue-400;
+  }
+
+  .hljs-function {
+    @apply text-yellow-600 dark:text-yellow-400;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent;
+  }
+
+  /* Glass effect */
+  .glass {
+    @apply backdrop-blur-md backdrop-saturate-150;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .glass.dark {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Focus styles */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background;
+  }
+
+  /* Truncate with tooltip */
+  .truncate-tooltip {
+    @apply truncate;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
