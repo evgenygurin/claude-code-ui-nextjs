@@ -1,0 +1,278 @@
+name: Claude Enhanced Assistant
+on:
+  # Триггер на все события PR
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+  
+  # Триггер на комментарии
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  
+  # Триггер на issues
+  issues:
+    types: [opened, labeled, assigned]
+  
+  # Триггер на review
+  pull_request_review:
+    types: [submitted]
+  
+  # Триггер по расписанию для maintenance
+  schedule:
+    - cron: "0 9 * * 1" # Каждый понедельник в 9:00 UTC
+  
+  # Ручной запуск
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        default: 'review'
+        type: choice
+        options:
+          - review
+          - security-audit
+          - dependency-check
+          - documentation-sync
+          - performance-analysis
+
+jobs:
+  claude-enhanced:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write      # Для создания веток и коммитов
+      pull-requests: write # Для работы с PR
+      issues: write        # Для работы с issues
+      id-token: write     # Для OIDC
+      actions: read       # Для чтения результатов CI
+      security-events: write # Для security анализа
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Правильный checkout для PR
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0  # Полная история для анализа
+          
+      - name: Auto-assign Claude to PR
+        if: github.event_name == 'pull_request' && github.event.action == 'opened'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Назначаем Claude как reviewer
+            try {
+              await github.rest.pulls.requestReviewers({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number,
+                reviewers: ['claude[bot]']
+              });
+              console.log('✅ Claude assigned as reviewer');
+            } catch (error) {
+              console.log('Note: Could not assign Claude as reviewer:', error.message);
+            }
+            
+            // Добавляем метки
+            try {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: ['claude-review', 'ai-enhanced']
+              });
+              console.log('✅ Added AI review labels');
+            } catch (error) {
+              console.log('Note: Could not add labels:', error.message);
+            }
+            
+            // Добавляем assignee
+            try {
+              await github.rest.issues.addAssignees({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                assignees: [context.payload.pull_request.user.login]
+              });
+              console.log('✅ Assigned PR to author');
+            } catch (error) {
+              console.log('Note: Could not assign PR:', error.message);
+            }
+      
+      - name: Claude Enhanced Action
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          
+          # Включаем visual progress tracking для всех PR
+          track_progress: ${{ github.event_name == 'pull_request' }}
+          
+          # Расширенные разрешения
+          additional_permissions: |
+            actions: read
+            security-events: write
+          
+          # Настройка триггеров
+          trigger_phrase: "@claude"
+          assignee_trigger: "claude"
+          label_trigger: "claude-help"
+          
+          # Используем sticky comment для PR (один комментарий обновляется)
+          use_sticky_comment: ${{ github.event_name == 'pull_request' }}
+          
+          # Префикс для веток Claude
+          branch_prefix: "claude/"
+          
+          # Динамический prompt на основе контекста
+          prompt: |
+            ${{ github.event_name == 'pull_request' && format('
+            REPO: {0}
+            PR NUMBER: {1}
+            PR TITLE: {2}
+            PR AUTHOR: {3}
+            PR BRANCH: {4}
+            
+            You are Claude, an AI code reviewer for this Next.js project.
+            
+            Please perform a comprehensive review focusing on:
+            
+            ## Code Quality Analysis
+            - TypeScript best practices and type safety
+            - React/Next.js patterns and performance
+            - Component architecture and reusability
+            - Code duplication and DRY principles
+            
+            ## Testing & Security
+            - Test coverage for new features
+            - Security vulnerabilities (OWASP Top 10)
+            - Authentication/authorization issues
+            - Input validation and sanitization
+            
+            ## Performance Review
+            - Bundle size impact
+            - Rendering performance
+            - API call optimization
+            - Caching strategies
+            
+            ## Documentation
+            - Code comments for complex logic
+            - README updates if needed
+            - API documentation
+            - Storybook stories for new components
+            
+            ## Automated Improvements
+            If you find issues you can fix:
+            1. Create a new branch from this PR
+            2. Make the improvements
+            3. Commit with clear messages
+            4. Comment about the fixes
+            
+            Use inline comments for specific code issues.
+            Post a comprehensive summary at the end.
+            
+            Rate the PR: 
+            - 🟢 APPROVED (ready to merge)
+            - 🟡 NEEDS_CHANGES (minor issues)
+            - 🔴 BLOCKED (critical issues)
+            ', github.repository, github.event.pull_request.number, github.event.pull_request.title, github.event.pull_request.user.login, github.event.pull_request.head.ref) || '' }}
+            
+            ${{ github.event_name == 'issues' && github.event.action == 'opened' && format('
+            REPO: {0}
+            ISSUE NUMBER: {1}
+            ISSUE TITLE: {2}
+            ISSUE AUTHOR: {3}
+            
+            Analyze this new issue and:
+            1. Categorize: bug, feature, question, documentation
+            2. Set priority: critical, high, medium, low
+            3. Add appropriate labels
+            4. Check for duplicates
+            5. Suggest solution approach if applicable
+            6. Estimate complexity: XS, S, M, L, XL
+            
+            If this is a bug:
+            - Try to reproduce it
+            - Suggest debugging steps
+            - Propose a fix if possible
+            
+            If this is a feature request:
+            - Assess feasibility
+            - Suggest implementation approach
+            - Identify potential challenges
+            ', github.repository, github.event.issue.number, github.event.issue.title, github.event.issue.user.login) || '' }}
+            
+            ${{ github.event_name == 'schedule' && '
+            Perform weekly maintenance tasks:
+            
+            1. Security Audit
+               - Check for vulnerable dependencies
+               - Review security headers
+               - Scan for exposed secrets
+            
+            2. Dependency Management
+               - Check for outdated packages
+               - Review security advisories
+               - Suggest updates with breaking changes noted
+            
+            3. Code Quality
+               - Find unused imports/exports
+               - Identify dead code
+               - Check for console.logs in production code
+            
+            4. Documentation Review
+               - Verify all public APIs are documented
+               - Check for outdated examples
+               - Ensure README is current
+            
+            5. Performance Analysis
+               - Check bundle size trends
+               - Identify large dependencies
+               - Find rendering bottlenecks
+            
+            Create issues for any findings with appropriate labels and priority.
+            ' || '' }}
+            
+            ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'security-audit' && '
+            Perform comprehensive security audit:
+            - OWASP Top 10 analysis
+            - Dependency vulnerability scan
+            - Authentication flow review
+            - API security assessment
+            - Data validation audit
+            ' || '' }}
+          
+          # Расширенная конфигурация Claude
+          claude_args: |
+            --model claude-3-5-sonnet-20241022
+            --max-turns 20
+            --allowedTools "Bash,Read,Write,Edit,MultiEdit,WebSearch"
+            --system-prompt "You are Claude, an expert AI assistant specialized in Next.js, React, TypeScript, and modern web development. You have deep knowledge of security best practices, performance optimization, and clean code principles. Be thorough but constructive in your feedback. When you can fix issues automatically, do so proactively."
+          
+          # Дополнительные настройки
+          settings: |
+            {
+              "env": {
+                "NODE_ENV": "development",
+                "NEXT_PUBLIC_API_URL": "${{ secrets.API_URL || 'http://localhost:3000' }}"
+              },
+              "mcp": {
+                "github": {
+                  "token": "${{ secrets.GITHUB_TOKEN }}",
+                  "repository": "${{ github.repository }}"
+                }
+              },
+              "analysis": {
+                "includeLinting": true,
+                "includeTypeCheck": true,
+                "includeSecurityScan": true,
+                "includeBundleAnalysis": true
+              },
+              "automation": {
+                "autoFix": true,
+                "autoLabel": true,
+                "autoAssign": true,
+                "createIssuesForFindings": true
+              }
+            }
