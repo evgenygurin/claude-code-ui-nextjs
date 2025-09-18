@@ -9,16 +9,6 @@
       "maxDuration": 30
     }
   },
-  "env": {
-    "NEXT_PUBLIC_APP_URL": "@app_url",
-    "NEXTAUTH_URL": "@nextauth_url",
-    "NEXTAUTH_SECRET": "@nextauth_secret",
-    "CLAUDE_API_KEY": "@claude_api_key",
-    "CURSOR_API_KEY": "@cursor_api_key",
-    "DATABASE_URL": "@database_url",
-    "OPENAI_API_KEY": "@openai_api_key",
-    "V0_API_KEY": "@v0_api_key"
-  },
   "build": {
     "env": {
       "NODE_ENV": "production",
