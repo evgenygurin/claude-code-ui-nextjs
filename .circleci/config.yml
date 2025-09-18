@@ -73,10 +73,11 @@ jobs:
           at: ~/project
       - run:
           name: Install Vercel CLI
+          no_output_timeout: 5m
           command: npm install -g vercel@latest
-          no_output_timeout: 2m
       - run:
           name: Deploy to Vercel Preview
+          no_output_timeout: 20m
           command: |
             if [ -n "${CIRCLE_PULL_REQUEST}" ]; then
               echo "🚀 Deploying preview for PR ${CIRCLE_PULL_REQUEST}"
@@ -93,7 +94,6 @@ jobs:
             else
               echo "Not a PR, skipping preview deployment"
             fi
-          no_output_timeout: 8m
 
   deploy_production:
     executor: node-executor
@@ -102,10 +102,11 @@ jobs:
           at: ~/project
       - run:
           name: Install Vercel CLI
+          no_output_timeout: 5m
           command: npm install -g vercel@latest
-          no_output_timeout: 2m
       - run:
           name: Deploy to Vercel Production
+          no_output_timeout: 20m
           command: |
             echo "🚀 Deploying to production"
             
@@ -118,7 +119,6 @@ jobs:
             
             # Output the deployment URL
             echo "✅ Production URL: $(cat deployment-url.txt)"
-          no_output_timeout: 8m
 
   security_scan:
     executor: node-executor
