@@ -10,7 +10,13 @@
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf .next out",
-    "preview": "next build && next start"
+    "preview": "next build && next start",
+    "deploy:preview": "vercel --confirm",
+    "deploy:production": "vercel --prod --confirm",
+    "setup:vercel": "./scripts/setup-vercel.sh",
+    "check:setup": "./scripts/check-setup.sh",
+    "ci:quality": "npm run lint && npm run type-check && npm run build",
+    "prepare:deploy": "npm run clean && npm run ci:quality"
   },
   "dependencies": {
     "next": "15.1.8",
