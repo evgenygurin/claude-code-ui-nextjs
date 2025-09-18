@@ -1,8 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverComponentsExternalPackages: ['node-pty', 'ws'],
-  },
+  serverExternalPackages: ['node-pty', 'ws'],
   webpack: (config, { isServer }) => {
     // Handle node-pty native module
     if (isServer) {
@@ -69,7 +67,6 @@ const nextConfig = {
   output: 'standalone',
   poweredByHeader: false,
   reactStrictMode: true,
-  swcMinify: true,
   trailingSlash: false,
   // TypeScript configuration
   typescript: {

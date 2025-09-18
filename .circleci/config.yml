@@ -1,0 +1,164 @@
+version: 2.1
+
+orbs:
+  node: circleci/node@5.2.0
+  
+executors:
+  node-executor:
+    docker:
+      - image: cimg/node:20.10
+    working_directory: ~/project
+
+jobs:
+  install_dependencies:
+    executor: node-executor
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "package-lock.json" }}
+            - v1-dependencies-
+      - run:
+          name: Install Dependencies
+          command: npm ci
+      - save_cache:
+          paths:
+            - node_modules
+          key: v1-dependencies-{{ checksum "package-lock.json" }}
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - .
+
+  lint:
+    executor: node-executor
+    steps:
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: Run Linting
+          command: npm run lint
+
+  type_check:
+    executor: node-executor
+    steps:
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: Type Checking
+          command: npm run type-check
+
+  build:
+    executor: node-executor
+    steps:
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: Build Application
+          command: npm run build
+      - run:
+          name: Check Build Size
+          command: |
+            echo "Build completed successfully"
+            du -sh .next || true
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - .next
+
+  deploy_preview:
+    executor: node-executor
+    steps:
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: Install Vercel CLI
+          command: npm install -g vercel@latest
+      - run:
+          name: Deploy to Vercel Preview
+          command: |
+            if [ -n "${CIRCLE_PULL_REQUEST}" ]; then
+              vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
+              vercel build --token=$VERCEL_TOKEN
+              vercel deploy --prebuilt --token=$VERCEL_TOKEN > deployment-url.txt
+              echo "Preview URL: $(cat deployment-url.txt)"
+            else
+              echo "Not a PR, skipping preview deployment"
+            fi
+
+  deploy_production:
+    executor: node-executor
+    steps:
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: Install Vercel CLI
+          command: npm install -g vercel@latest
+      - run:
+          name: Deploy to Vercel Production
+          command: |
+            vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+            vercel build --prod --token=$VERCEL_TOKEN
+            vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN > deployment-url.txt
+            echo "Production URL: $(cat deployment-url.txt)"
+
+workflows:
+  version: 2
+  build_and_deploy:
+    jobs:
+      - install_dependencies
+      
+      - lint:
+          requires:
+            - install_dependencies
+            
+      - type_check:
+          requires:
+            - install_dependencies
+            
+      - build:
+          requires:
+            - install_dependencies
+            
+      - deploy_preview:
+          requires:
+            - lint
+            - type_check
+            - build
+          filters:
+            branches:
+              ignore:
+                - main
+                - master
+                
+      - deploy_production:
+          requires:
+            - lint
+            - type_check
+            - build
+          filters:
+            branches:
+              only:
+                - main
+                - master
+
+  # Nightly build to catch issues early
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                - main
+    jobs:
+      - install_dependencies
+      - lint:
+          requires:
+            - install_dependencies
+      - type_check:
+          requires:
+            - install_dependencies
+      - build:
+          requires:
+            - install_dependencies
