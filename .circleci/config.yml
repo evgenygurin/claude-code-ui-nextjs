@@ -103,6 +103,30 @@ jobs:
             vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN > deployment-url.txt
             echo "Production URL: $(cat deployment-url.txt)"
 
+  security_scan:
+    executor: node-executor
+    steps:
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: Install TruffleHog
+          command: |
+            curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin
+      - run:
+          name: Scan for Secrets
+          command: |
+            echo "🔍 Scanning for hardcoded secrets..."
+            trufflehog filesystem --directory=. --exclude-paths=.trufflehogignore --no-verification --json > trufflehog-results.json || true
+
+            # Check if any secrets were found
+            if [ -s trufflehog-results.json ]; then
+              echo "❌ SECURITY ALERT: Potential secrets detected!"
+              cat trufflehog-results.json
+              exit 1
+            else
+              echo "✅ No hardcoded secrets detected"
+            fi
+
   codegen_analysis:
     executor: node-executor
     steps:
@@ -137,7 +161,7 @@ jobs:
             if [ -n "$SENTRY_AUTH_TOKEN" ]; then
               npm install -g @sentry/cli
               export SENTRY_ORG="${SENTRY_ORG:-default}"
-              export SENTRY_PROJECT="${SENTRY_PROJECT:-claude-code-ui}"
+              export SENTRY_PROJECT="${SENTRY_PROJECT}"
               sentry-cli releases new "$CIRCLE_SHA1"
               sentry-cli releases set-commits "$CIRCLE_SHA1" --auto
               sentry-cli releases finalize "$CIRCLE_SHA1"
@@ -163,11 +187,16 @@ workflows:
           requires:
             - install_dependencies
 
+      - security_scan:
+          requires:
+            - install_dependencies
+
       - deploy_preview:
           requires:
             - lint
             - type_check
             - build
+            - security_scan
           filters:
             branches:
               ignore:
@@ -179,6 +208,7 @@ workflows:
             - lint
             - type_check
             - build
+            - security_scan
           filters:
             branches:
               only:
