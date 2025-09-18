@@ -45,7 +45,4 @@ next-env.d.ts
 Thumbs.db
 
 # Temporary directories (for CI/CD demo)
-/components
-/lib
-/hooks
-/types
+# Note: components, lib, hooks, and types directories are now part of the codebase
