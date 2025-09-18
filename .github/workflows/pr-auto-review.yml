@@ -19,15 +19,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          # For PRs, checkout the PR branch for accurate review
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0  # Full history for better analysis
 
       - name: Run Claude Auto Review
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           
-          # Enable visual progress tracking (like v0.x)
+          # Enable visual progress tracking
           track_progress: true
+          
+          # Grant additional permissions for reading CI results
+          additional_permissions: |
+            actions: read
           
           # Comprehensive review prompt
           prompt: |
@@ -73,5 +79,5 @@ jobs:
           claude_args: |
             --model claude-3-5-haiku-20241022
             --max-turns 15
-            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Read"
+            --allowedTools "Bash,Read,Write,Edit"
             --system-prompt "You are an expert code reviewer for a Next.js project. Be thorough but constructive. Focus on actionable feedback."
