@@ -74,17 +74,26 @@ jobs:
       - run:
           name: Install Vercel CLI
           command: npm install -g vercel@latest
+          no_output_timeout: 2m
       - run:
           name: Deploy to Vercel Preview
           command: |
             if [ -n "${CIRCLE_PULL_REQUEST}" ]; then
+              echo "🚀 Deploying preview for PR ${CIRCLE_PULL_REQUEST}"
+              
+              # Pull Vercel project configuration
               vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
-              vercel build --token=$VERCEL_TOKEN
+              
+              # Skip Vercel build since we already built in previous step
+              # Use the prebuilt .next directory from workspace
               vercel deploy --prebuilt --token=$VERCEL_TOKEN > deployment-url.txt
-              echo "Preview URL: $(cat deployment-url.txt)"
+              
+              # Output the deployment URL
+              echo "✅ Preview URL: $(cat deployment-url.txt)"
             else
               echo "Not a PR, skipping preview deployment"
             fi
+          no_output_timeout: 8m
 
   deploy_production:
     executor: node-executor
@@ -94,13 +103,22 @@ jobs:
       - run:
           name: Install Vercel CLI
           command: npm install -g vercel@latest
+          no_output_timeout: 2m
       - run:
           name: Deploy to Vercel Production
           command: |
+            echo "🚀 Deploying to production"
+            
+            # Pull Vercel project configuration
             vercel pull --yes --environment=production --token=$VERCEL_TOKEN
-            vercel build --prod --token=$VERCEL_TOKEN
+            
+            # Skip Vercel build since we already built in previous step
+            # Use the prebuilt .next directory from workspace
             vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN > deployment-url.txt
-            echo "Production URL: $(cat deployment-url.txt)"
+            
+            # Output the deployment URL
+            echo "✅ Production URL: $(cat deployment-url.txt)"
+          no_output_timeout: 8m
 
   security_scan:
     executor: node-executor
