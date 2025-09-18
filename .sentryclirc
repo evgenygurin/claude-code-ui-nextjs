@@ -1,0 +1,7 @@
+[defaults]
+url=https://us.sentry.io/
+org=evgeny-pl
+project=claude-code-ui-nextjs
+
+[auth]
+token=
