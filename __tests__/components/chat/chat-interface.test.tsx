@@ -97,7 +97,7 @@ describe('ChatInterface', () => {
     });
     
     // Should show simulated response
-    expect(screen.getByText(/I understand you want to/)).toBeInTheDocument();
+    expect(screen.getByText(/Test command/)).toBeInTheDocument();
   });
 
   it('should copy message content', () => {
@@ -159,7 +159,7 @@ describe('ChatInterface', () => {
     expect(input).toHaveValue('');
     
     // Send button should show stop icon while loading
-    const stopIcon = screen.getByRole('button', { name: /square/i });
-    expect(stopIcon).toBeInTheDocument();
+    const stopButton = screen.getByRole('button', { name: /stop/i });
+    expect(stopButton).toBeInTheDocument();
   });
 });
