@@ -19,6 +19,9 @@ const customJestConfig = {
     '<rootDir>/build/',
     '<rootDir>/dist/'
   ],
+  modulePathIgnorePatterns: [
+    '<rootDir>/.next/'
+  ],
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
     'app/**/*.{js,jsx,ts,tsx}',

@@ -11,11 +11,18 @@ on:
         description: 'Error details'
         required: false
         default: 'Manual CodeGen trigger'
+  pull_request:
+    branches: [main, master]
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main, master]
+  schedule:
+    - cron: '0 */6 * * *'
 
 jobs:
   codegen-placeholder:
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' || github.event_name == 'push'
     
     steps:
     - name: Checkout code
@@ -30,15 +37,16 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    - name: CodeGen Handler (Manual Trigger)
+    - name: CodeGen Handler
       run: |
-        echo "🤖 CodeGen manual trigger activated"
-        echo "Error Type: ${{ github.event.inputs.error_type }}"
-        echo "Error Details: ${{ github.event.inputs.error_details }}"
-        echo "This workflow can be used to manually trigger CodeGen analysis"
+        echo "🤖 CodeGen integration workflow activated"
+        echo "Event: ${{ github.event_name }}"
+        echo "Error Type: ${{ github.event.inputs.error_type || 'auto_trigger' }}"
+        echo "Error Details: ${{ github.event.inputs.error_details || 'Automated CodeGen workflow run' }}"
+        echo "This workflow monitors CI/CD health and provides CodeGen integration"
         
-        ERROR_TYPE="${{ github.event.inputs.error_type || 'ci_failure' }}"
-        ERROR_DETAILS="${{ github.event.inputs.error_details || 'CI/CD pipeline failure detected' }}"
+        ERROR_TYPE="${{ github.event.inputs.error_type || 'auto_trigger' }}"
+        ERROR_DETAILS="${{ github.event.inputs.error_details || 'Automated CI/CD health monitoring' }}"
         
         # Run the error handler script (this won't fail the build)
         node scripts/codegen-error-handler.js "$ERROR_TYPE" "$ERROR_DETAILS" || echo "Handler completed"
