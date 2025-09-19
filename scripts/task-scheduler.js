@@ -154,6 +154,13 @@ fi
     for (const taskFile of taskFiles) {
       try {
         const task = JSON.parse(fs.readFileSync(taskFile, 'utf8'));
+        
+        // Validate that task has required fields
+        if (!task || !task.id || !task.type || !task.status || !task.scheduledFor) {
+          console.warn(`⚠️  Invalid task file (missing required fields): ${taskFile}`);
+          continue;
+        }
+        
         const scheduledTime = new Date(task.scheduledFor);
         
         console.log(`📋 Task: ${task.id}`);

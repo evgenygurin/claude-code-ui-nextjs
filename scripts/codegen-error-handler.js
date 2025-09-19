@@ -12,12 +12,32 @@ const path = require('path');
 class CodeGenErrorHandler {
   constructor() {
     this.apiKey = process.env.CODEGEN_API_KEY;
-    this.projectId = process.env.CIRCLE_PROJECT_REPONAME;
-    this.buildNumber = process.env.CIRCLE_BUILD_NUM;
-    this.branch = process.env.CIRCLE_BRANCH;
-    this.commitSha = process.env.CIRCLE_SHA1;
-    this.jobName = process.env.CIRCLE_JOB;
-    this.buildUrl = process.env.CIRCLE_BUILD_URL;
+    
+    // Support both CircleCI and GitHub Actions environment variables
+    this.projectId = process.env.CIRCLE_PROJECT_REPONAME || 
+                     process.env.GITHUB_REPOSITORY?.split('/')[1] ||
+                     'unknown-project';
+    
+    this.buildNumber = process.env.CIRCLE_BUILD_NUM || 
+                       process.env.GITHUB_RUN_NUMBER ||
+                       'local';
+    
+    this.branch = process.env.CIRCLE_BRANCH || 
+                  process.env.GITHUB_REF_NAME ||
+                  'unknown-branch';
+    
+    this.commitSha = process.env.CIRCLE_SHA1 || 
+                     process.env.GITHUB_SHA ||
+                     'unknown-commit';
+    
+    this.jobName = process.env.CIRCLE_JOB || 
+                   process.env.GITHUB_JOB ||
+                   'unknown-job';
+    
+    this.buildUrl = process.env.CIRCLE_BUILD_URL || 
+                    (process.env.GITHUB_SERVER_URL && process.env.GITHUB_REPOSITORY && process.env.GITHUB_RUN_ID
+                      ? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
+                      : 'unknown-url');
   }
 
   async handleError(errorType, errorDetails) {
@@ -140,12 +160,13 @@ Please use your standard development workflow: analyze → fix → test → revi
   }
 
   async scheduleFollowUpTask(errorReport) {
+    const taskId = `followup-${Date.now()}`;
     const followUpTask = {
-      id: `followup-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      scheduledFor: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hour from now
+      id: taskId,
       type: 'followup',
       status: 'scheduled',
+      createdAt: new Date().toISOString(),
+      scheduledFor: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hour from now
       originalError: errorReport,
       instructions: `
         Check if the CI/CD issues have been resolved after 1 hour.
@@ -164,7 +185,7 @@ Please use your standard development workflow: analyze → fix → test → revi
       fs.mkdirSync(tasksDir, { recursive: true });
     }
 
-    const taskFile = path.join(tasksDir, `${followUpTask.id}.json`);
+    const taskFile = path.join(tasksDir, `${taskId}.json`);
     fs.writeFileSync(taskFile, JSON.stringify(followUpTask, null, 2));
     
     console.log(`⏰ Follow-up task scheduled: ${taskFile}`);
