@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom'
+import React from 'react'
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
@@ -78,20 +79,27 @@ jest.mock('next/navigation', () => ({
   },
 }))
 
+// Mock DOM methods
+Element.prototype.scrollIntoView = jest.fn()
+HTMLElement.prototype.scrollIntoView = jest.fn()
+
+// Mock window.scrollTo
+global.scrollTo = jest.fn()
+
 // Mock framer-motion
 jest.mock('framer-motion', () => ({
   motion: {
-    div: 'div',
-    button: 'button',
-    span: 'span',
-    p: 'p',
-    h1: 'h1',
-    h2: 'h2',
-    h3: 'h3',
-    section: 'section',
-    article: 'article',
-    aside: 'aside',
-    nav: 'nav',
+    div: ({ children, ...props }) => React.createElement('div', props, children),
+    button: ({ children, ...props }) => React.createElement('button', props, children),
+    span: ({ children, ...props }) => React.createElement('span', props, children),
+    p: ({ children, ...props }) => React.createElement('p', props, children),
+    h1: ({ children, ...props }) => React.createElement('h1', props, children),
+    h2: ({ children, ...props }) => React.createElement('h2', props, children),
+    h3: ({ children, ...props }) => React.createElement('h3', props, children),
+    section: ({ children, ...props }) => React.createElement('section', props, children),
+    article: ({ children, ...props }) => React.createElement('article', props, children),
+    aside: ({ children, ...props }) => React.createElement('aside', props, children),
+    nav: ({ children, ...props }) => React.createElement('nav', props, children),
   },
   AnimatePresence: ({ children }) => children,
   useAnimation: () => ({
