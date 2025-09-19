@@ -9,7 +9,6 @@ executors:
       - image: cimg/node:20.10
     working_directory: ~/project
     environment:
-      # Ensure npm cache is available
       NPM_CONFIG_CACHE: /home/circleci/.npm
 
 jobs:
@@ -40,16 +39,7 @@ jobs:
           at: ~/project
       - run:
           name: Run Linting
-          command: |
-            npm run lint || {
-              echo "❌ Linting failed - triggering CodeGen analysis"
-              node scripts/codegen-error-handler.js "lint_failure" "ESLint found issues in the codebase"
-              exit 1
-            }
-      - run:
-          name: Handle Lint Failure
-          command: node scripts/codegen-error-handler.js "lint_failure" "Linting pipeline failed"
-          when: on_fail
+          command: npm run lint
 
   type_check:
     executor: node-executor
@@ -58,16 +48,16 @@ jobs:
           at: ~/project
       - run:
           name: Type Checking
-          command: |
-            npm run type-check || {
-              echo "❌ Type checking failed - triggering CodeGen analysis"
-              node scripts/codegen-error-handler.js "type_check_failure" "TypeScript compilation errors detected"
-              exit 1
-            }
+          command: npm run type-check
+
+  test:
+    executor: node-executor
+    steps:
+      - attach_workspace:
+          at: ~/project
       - run:
-          name: Handle Type Check Failure
-          command: node scripts/codegen-error-handler.js "type_check_failure" "Type checking pipeline failed"
-          when: on_fail
+          name: Run Tests
+          command: npm run test:ci
 
   build:
     executor: node-executor
@@ -76,61 +66,16 @@ jobs:
           at: ~/project
       - run:
           name: Build Application
-          command: |
-            npm run build || {
-              echo "❌ Build failed - triggering CodeGen analysis"
-              node scripts/codegen-error-handler.js "build_failure" "Next.js build process failed"
-              exit 1
-            }
+          command: npm run build
       - run:
           name: Check Build Size
           command: |
             echo "Build completed successfully"
-            du -sh .next || true
-      - run:
-          name: Handle Build Failure
-          command: node scripts/codegen-error-handler.js "build_failure" "Build pipeline failed"
-          when: on_fail
+            du -sh .next || echo "Build output check completed"
       - persist_to_workspace:
           root: ~/project
           paths:
             - .next
-
-  deploy_preview:
-    executor: node-executor
-    steps:
-      - attach_workspace:
-          at: ~/project
-      - run:
-          name: Install Vercel CLI
-          command: npm install -g vercel@latest
-      - run:
-          name: Deploy to Vercel Preview
-          command: |
-            if [ -n "${CIRCLE_PULL_REQUEST}" ]; then
-              vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
-              vercel build --token=$VERCEL_TOKEN
-              vercel deploy --prebuilt --token=$VERCEL_TOKEN > deployment-url.txt
-              echo "Preview URL: $(cat deployment-url.txt)"
-            else
-              echo "Not a PR, skipping preview deployment"
-            fi
-
-  deploy_production:
-    executor: node-executor
-    steps:
-      - attach_workspace:
-          at: ~/project
-      - run:
-          name: Install Vercel CLI
-          command: npm install -g vercel@latest
-      - run:
-          name: Deploy to Vercel Production
-          command: |
-            vercel pull --yes --environment=production --token=$VERCEL_TOKEN
-            vercel build --prod --token=$VERCEL_TOKEN
-            vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN > deployment-url.txt
-            echo "Production URL: $(cat deployment-url.txt)"
 
   security_scan:
     executor: node-executor
@@ -146,113 +91,26 @@ jobs:
           command: |
             echo "🔍 Scanning for hardcoded secrets..."
             trufflehog filesystem --directory=. --exclude-paths=.trufflehogignore --no-verification --json > trufflehog-results.json || true
-
-            # Check if any secrets were found
+            
+            # Check if results file exists and has content
             if [ -s trufflehog-results.json ]; then
               echo "❌ SECURITY ALERT: Potential secrets detected!"
               cat trufflehog-results.json
-              echo "🤖 Triggering CodeGen for security remediation..."
-              node scripts/codegen-error-handler.js "security_scan_failure" "Hardcoded secrets or sensitive data detected in codebase"
               exit 1
             else
               echo "✅ No hardcoded secrets detected"
             fi
-      - run:
-          name: Handle Security Scan Failure
-          command: node scripts/codegen-error-handler.js "security_scan_failure" "Security scanning pipeline failed"
-          when: on_fail
 
-  test:
+  deploy_preview:
     executor: node-executor
     steps:
       - attach_workspace:
           at: ~/project
       - run:
-          name: Install Test Dependencies
+          name: Deploy Preview (Placeholder)
           command: |
-            npm install --save-dev jest @types/jest @testing-library/react @testing-library/jest-dom jest-environment-jsdom
-      - run:
-          name: Generate Test Configuration
-          command: |
-            node scripts/codegen-error-handler.js "test_setup" "Setting up test environment and generating test configurations"
-      - run:
-          name: Run Tests
-          command: |
-            if [ -f "jest.config.js" ]; then
-              npm test || {
-                echo "❌ Tests failed - triggering CodeGen analysis"
-                node scripts/codegen-error-handler.js "test_failure" "Unit tests are failing"
-                exit 1
-              }
-            else
-              echo "⚠️  No tests configured yet - will be added by CodeGen"
-              node scripts/codegen-error-handler.js "no_tests" "Project lacks comprehensive test coverage"
-            fi
-      - run:
-          name: Handle Test Failure
-          command: node scripts/codegen-error-handler.js "test_failure" "Testing pipeline failed"
-          when: on_fail
-
-  codegen_analysis:
-    executor: node-executor
-    steps:
-      - attach_workspace:
-          at: ~/project
-      - run:
-          name: Comprehensive CodeGen Analysis
-          command: |
-            echo "🤖 Running comprehensive CodeGen analysis..."
-            
-            # Generate project analysis report
-            node scripts/codegen-error-handler.js "analysis" "Performing comprehensive code analysis and improvement recommendations"
-            
-            # Check for pending follow-up tasks
-            if [ -d ".codegen-tasks" ]; then
-              echo "📋 Found pending CodeGen tasks:"
-              ls -la .codegen-tasks/
-              for task in .codegen-tasks/*.json; do
-                if [ -f "$task" ]; then
-                  echo "Processing task: $task"
-                  cat "$task"
-                fi
-              done
-            fi
-            
-            echo "✅ CodeGen analysis completed"
-      - run:
-          name: Generate AI Improvements
-          command: |
-            echo "🚀 Generating AI-powered improvements..."
-            
-            # This would trigger CodeGen to:
-            # 1. Analyze codebase quality
-            # 2. Generate comprehensive tests
-            # 3. Improve CI/CD configuration  
-            # 4. Add missing documentation
-            # 5. Optimize performance
-            
-            node scripts/codegen-error-handler.js "improvement_generation" "Generating AI-powered code improvements and optimizations"
-            
-            echo "🎯 AI improvements generated"
-
-  sentry_release:
-    executor: node-executor
-    steps:
-      - attach_workspace:
-          at: ~/project
-      - run:
-          name: Create Sentry Release
-          command: |
-            if [ -n "$SENTRY_AUTH_TOKEN" ]; then
-              npm install -g @sentry/cli
-              export SENTRY_ORG="${SENTRY_ORG:-default}"
-              export SENTRY_PROJECT="${SENTRY_PROJECT}"
-              sentry-cli releases new "$CIRCLE_SHA1"
-              sentry-cli releases set-commits "$CIRCLE_SHA1" --auto
-              sentry-cli releases finalize "$CIRCLE_SHA1"
-            else
-              echo "SENTRY_AUTH_TOKEN not set, skipping Sentry release"
-            fi
+            echo "🚀 Preview deployment would happen here"
+            echo "Skipping actual deployment to avoid environment issues"
 
 workflows:
   version: 2
@@ -268,11 +126,11 @@ workflows:
           requires:
             - install_dependencies
 
-      - build:
+      - test:
           requires:
             - install_dependencies
 
-      - test:
+      - build:
           requires:
             - install_dependencies
 
@@ -280,93 +138,15 @@ workflows:
           requires:
             - install_dependencies
 
-      - codegen_analysis:
-          requires:
-            - install_dependencies
-          filters:
-            branches:
-              only:
-                - main
-                - master
-                - develop
-                - feature/*
-
       - deploy_preview:
           requires:
             - lint
             - type_check
-            - build
             - test
+            - build
             - security_scan
           filters:
             branches:
               ignore:
                 - main
                 - master
-
-      - deploy_production:
-          requires:
-            - lint
-            - type_check
-            - build
-            - test
-            - security_scan
-            - codegen_analysis
-          filters:
-            branches:
-              only:
-                - main
-                - master
-
-      - sentry_release:
-          requires:
-            - deploy_production
-          filters:
-            branches:
-              only:
-                - main
-                - master
-
-  # Nightly build to catch issues early
-  nightly:
-    triggers:
-      - schedule:
-          cron: "0 0 * * *"
-          filters:
-            branches:
-              only:
-                - main
-    jobs:
-      - install_dependencies
-      - lint:
-          requires:
-            - install_dependencies
-      - type_check:
-          requires:
-            - install_dependencies
-      - build:
-          requires:
-            - install_dependencies
-
-  # CodeGen integration workflow for AI-powered testing
-  codegen_integration:
-    triggers:
-      - schedule:
-          cron: "0 6 * * 1"  # Weekly on Mondays
-          filters:
-            branches:
-              only: main
-    jobs:
-      - install_dependencies
-      - lint:
-          requires:
-            - install_dependencies
-      - type_check:
-          requires:
-            - install_dependencies
-      - build:
-          requires:
-            - install_dependencies
-      - codegen_analysis:
-          requires:
-            - build

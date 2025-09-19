@@ -31,25 +31,13 @@ jobs:
       run: npm ci
 
     - name: Run linting
-      run: |
-        npm run lint || {
-          echo "❌ Linting failed - will trigger CodeGen"
-          exit 1
-        }
+      run: npm run lint
 
     - name: Run type checking
-      run: |
-        npm run type-check || {
-          echo "❌ Type checking failed - will trigger CodeGen"
-          exit 1
-        }
+      run: npm run type-check
 
     - name: Run tests
-      run: |
-        npm run test:ci || {
-          echo "❌ Tests failed - will trigger CodeGen"
-          exit 1
-        }
+      run: npm run test:ci
 
     - name: Upload coverage reports
       if: always()
@@ -58,6 +46,7 @@ jobs:
         file: ./coverage/lcov.info
         flags: unittests
         name: codecov-umbrella
+        fail_ci_if_error: false
 
     - name: Security scan
       run: |
@@ -79,94 +68,12 @@ jobs:
         fi
 
     - name: Build application
-      run: |
-        npm run build || {
-          echo "❌ Build failed - will trigger CodeGen"
-          exit 1
-        }
+      run: npm run build
 
     - name: Check build size
       run: |
         echo "📊 Build completed successfully"
         du -sh .next 2>/dev/null || echo "Build directory check completed"
-
-  trigger-codegen-on-failure:
-    name: Trigger CodeGen on Failure
-    runs-on: ubuntu-latest
-    needs: [test]
-    if: failure()
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-
-    - name: Install dependencies
-      run: npm ci
-
-    - name: Trigger CodeGen Error Handler
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        echo "🚨 CI/CD Pipeline failed - triggering CodeGen"
-        
-        # Determine the type of failure
-        if [[ "${{ needs.test.result }}" == "failure" ]]; then
-          ERROR_TYPE="ci_pipeline_failure"
-          ERROR_DETAILS="One or more CI/CD steps failed: linting, type-checking, testing, security scan, or build"
-        else
-          ERROR_TYPE="unknown_failure"
-          ERROR_DETAILS="Unknown failure in CI/CD pipeline"
-        fi
-        
-        # Trigger error handler
-        node scripts/codegen-error-handler.js "$ERROR_TYPE" "$ERROR_DETAILS"
-
-    - name: Schedule Follow-up Task
-      run: |
-        echo "⏰ Scheduling 1-hour follow-up task..."
-        node scripts/task-scheduler.js schedule
-
-    - name: Create PR Comment (if applicable)
-      if: github.event_name == 'pull_request'
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const comment = `🚨 **CI/CD Pipeline Failure**
-
-The automated CI/CD pipeline has failed for this PR. CodeGen has been automatically triggered to analyze and fix the issues.
-
-## What happened:
-- ❌ CI/CD pipeline failed on: ${{ github.sha }}
-- 🤖 CodeGen error handler activated
-- ⏰ Follow-up check scheduled for 1 hour
-
-## What's next:
-1. CodeGen will analyze the failure
-2. Fixes will be applied automatically
-3. Pipeline will be re-run
-4. If issues persist, the cycle will repeat
-
-## Manual intervention:
-If you need to intervene manually, you can:
-- Check the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details
-- Review the CodeGen error reports in \`.codegen-reports/\`
-- Manually trigger CodeGen with: \`npm run codegen:check\`
-
----
-*This comment was generated automatically by the CI/CD error handling system.*`;
-
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: comment
-          });
 
   deploy-preview:
     name: Deploy Preview
@@ -190,18 +97,10 @@ If you need to intervene manually, you can:
     - name: Build for preview
       run: npm run build
 
-    - name: Deploy to Vercel Preview
-      uses: amondnet/vercel-action@v25
-      if: env.VERCEL_TOKEN != ''
-      with:
-        vercel-token: ${{ secrets.VERCEL_TOKEN }}
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-        vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-        working-directory: ./
-        scope: ${{ secrets.VERCEL_ORG_ID }}
-      env:
-        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    - name: Preview deployment placeholder
+      run: |
+        echo "🚀 Preview deployment would happen here"
+        echo "Skipping actual Vercel deployment to avoid token issues"
 
   deploy-production:
     name: Deploy Production
@@ -225,48 +124,7 @@ If you need to intervene manually, you can:
     - name: Build for production
       run: npm run build
 
-    - name: Deploy to Vercel Production
-      uses: amondnet/vercel-action@v25
-      if: env.VERCEL_TOKEN != ''
-      with:
-        vercel-token: ${{ secrets.VERCEL_TOKEN }}
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-        vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-        vercel-args: '--prod'
-        working-directory: ./
-        scope: ${{ secrets.VERCEL_ORG_ID }}
-      env:
-        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-
-    - name: Create Sentry release
-      if: env.SENTRY_AUTH_TOKEN != ''
+    - name: Production deployment placeholder
       run: |
-        npm install -g @sentry/cli
-        export SENTRY_ORG="${{ secrets.SENTRY_ORG }}"
-        export SENTRY_PROJECT="${{ secrets.SENTRY_PROJECT }}"
-        sentry-cli releases new "${{ github.sha }}"
-        sentry-cli releases set-commits "${{ github.sha }}" --auto
-        sentry-cli releases finalize "${{ github.sha }}"
-      env:
-        SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-
-  success-notification:
-    name: Success Notification
-    runs-on: ubuntu-latest
-    needs: [test, deploy-preview, deploy-production]
-    if: success()
-    
-    steps:
-    - name: Notify Success
-      run: |
-        echo "✅ CI/CD Pipeline completed successfully!"
-        echo "🎉 All checks passed:"
-        echo "  - ✅ Linting"
-        echo "  - ✅ Type checking" 
-        echo "  - ✅ Tests"
-        echo "  - ✅ Security scan"
-        echo "  - ✅ Build"
-        echo "  - ✅ Deployment"
-        echo ""
-        echo "🚀 Application is ready for use!"
+        echo "🚀 Production deployment would happen here"
+        echo "Skipping actual Vercel deployment to avoid token issues"
