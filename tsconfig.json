@@ -44,10 +44,5 @@
     "__tests__/**/*.ts",
     "__tests__/**/*.tsx"
   ],
-  "exclude": [
-    "node_modules",
-    ".next",
-    "out",
-    "dist"
-  ]
+  "exclude": ["node_modules", ".next", "out", "dist"]
 }

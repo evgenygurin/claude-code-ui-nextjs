@@ -5,6 +5,7 @@ This guide covers the complete CI/CD setup for deploying the Claude Code UI to V
 ## Overview
 
 The project is configured with dual CI/CD pipelines:
+
 - **Primary**: CircleCI with Codegen integration
 - **Backup**: GitHub Actions workflow
 
@@ -27,6 +28,7 @@ npm run setup:vercel
 ```
 
 This script will:
+
 - Install Vercel CLI if needed
 - Link your project to Vercel
 - Set up environment variables
@@ -37,17 +39,20 @@ This script will:
 ### Step 1: Vercel Configuration
 
 1. **Install and authenticate Vercel CLI:**
+
    ```bash
    npm install -g vercel@latest
    vercel login
    ```
 
 2. **Link project to Vercel:**
+
    ```bash
    vercel link
    ```
 
 3. **Set up environment variables:**
+
    ```bash
    vercel env add NEXTAUTH_URL production
    vercel env add NEXTAUTH_SECRET production
@@ -62,7 +67,7 @@ This script will:
    ```bash
    # Get project ID
    vercel project ls
-   # Get organization ID  
+   # Get organization ID
    vercel teams ls
    ```
 
@@ -92,7 +97,7 @@ This script will:
 Add these secrets to your GitHub repository:
 
 - `VERCEL_TOKEN`
-- `VERCEL_ORG_ID` 
+- `VERCEL_ORG_ID`
 - `VERCEL_PROJECT_ID`
 - `CODEGEN_API_KEY`
 
@@ -124,22 +129,22 @@ The backup GitHub Actions pipeline provides:
 
 ### Required for Runtime
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `NEXTAUTH_URL` | NextAuth base URL | `https://your-app.vercel.app` |
-| `NEXTAUTH_SECRET` | NextAuth secret key | `your-secret-key` |
-| `CLAUDE_API_KEY` | Claude API key | `sk-ant-...` |
-| `CURSOR_API_KEY` | Cursor API key | `cursor_...` |
-| `DATABASE_URL` | Database connection string | `postgresql://...` |
+| Variable          | Description                | Example                       |
+| ----------------- | -------------------------- | ----------------------------- |
+| `NEXTAUTH_URL`    | NextAuth base URL          | `https://your-app.vercel.app` |
+| `NEXTAUTH_SECRET` | NextAuth secret key        | `your-secret-key`             |
+| `CLAUDE_API_KEY`  | Claude API key             | `sk-ant-...`                  |
+| `CURSOR_API_KEY`  | Cursor API key             | `cursor_...`                  |
+| `DATABASE_URL`    | Database connection string | `postgresql://...`            |
 
 ### Required for CI/CD
 
-| Variable | Description | Where to Get |
-|----------|-------------|--------------|
-| `VERCEL_TOKEN` | Vercel authentication token | https://vercel.com/account/tokens |
-| `VERCEL_ORG_ID` | Vercel organization ID | `vercel teams ls` |
-| `VERCEL_PROJECT_ID` | Vercel project ID | `vercel project ls` |
-| `CODEGEN_API_KEY` | Codegen API key | https://docs.codegen.com |
+| Variable            | Description                 | Where to Get                      |
+| ------------------- | --------------------------- | --------------------------------- |
+| `VERCEL_TOKEN`      | Vercel authentication token | https://vercel.com/account/tokens |
+| `VERCEL_ORG_ID`     | Vercel organization ID      | `vercel teams ls`                 |
+| `VERCEL_PROJECT_ID` | Vercel project ID           | `vercel project ls`               |
+| `CODEGEN_API_KEY`   | Codegen API key             | https://docs.codegen.com          |
 
 ## Deployment Workflows
 
@@ -155,7 +160,7 @@ The backup GitHub Actions pipeline provides:
 # Deploy preview
 npm run deploy:preview
 
-# Deploy to production  
+# Deploy to production
 npm run deploy:production
 
 # Full quality check + build
@@ -167,17 +172,20 @@ npm run ci:quality
 ### Common Issues
 
 1. **Vercel Token Issues**
+
    ```bash
    vercel whoami  # Check if authenticated
    vercel login   # Re-authenticate if needed
    ```
 
 2. **Build Failures**
+
    ```bash
    npm run ci:quality  # Run full quality checks locally
    ```
 
 3. **Environment Variable Issues**
+
    ```bash
    vercel env ls  # List all environment variables
    vercel env add VAR_NAME production  # Add missing variables
@@ -194,7 +202,7 @@ npm run ci:quality
 npm run build
 
 # Check type errors
-npm run type-check  
+npm run type-check
 
 # Check linting issues
 npm run lint
@@ -255,6 +263,7 @@ vercel.json                     # Vercel project configuration
 ## Support
 
 For issues with:
+
 - **Vercel deployment**: Check Vercel dashboard and logs
 - **CircleCI pipeline**: Review CircleCI build logs and contexts
 - **Codegen integration**: Refer to https://docs.codegen.com/integrations/circleci
@@ -263,6 +272,7 @@ For issues with:
 ## Next Steps
 
 After successful setup:
+
 1. Push a test branch to verify preview deployments
 2. Create a test PR to verify Codegen analysis
 3. Merge to main to verify production deployment

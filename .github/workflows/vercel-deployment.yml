@@ -2,9 +2,9 @@ name: Vercel Deployment with Codegen Integration
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -15,26 +15,26 @@ jobs:
   quality-checks:
     runs-on: ubuntu-latest
     name: Quality Checks
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-          
+
       - name: Install dependencies
         run: npm ci
-        
+
       - name: Run linting
         run: npm run lint
-        
-      - name: Run type checking  
+
+      - name: Run type checking
         run: npm run type-check
-        
+
       - name: Build application
         run: npm run build
 
@@ -44,37 +44,37 @@ jobs:
     name: Codegen Analysis
     needs: quality-checks
     if: github.event_name == 'pull_request'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-          
+
       - name: Install dependencies
         run: npm ci
-        
+
       - name: Install Codegen CLI
         run: |
           curl -fsSL https://cli.codegen.com/install.sh | sh
           echo "$HOME/.codegen/bin" >> $GITHUB_PATH
-          
+
       - name: Run Codegen analysis
         run: |
           codegen analyze --format=json > codegen-report.json || true
         env:
           CODEGEN_API_KEY: ${{ secrets.CODEGEN_API_KEY }}
-          
+
       - name: Upload Codegen report
         uses: actions/upload-artifact@v4
         with:
           name: codegen-analysis
           path: codegen-report.json
-          
+
       - name: Comment PR with Codegen results
         if: github.event_name == 'pull_request'
         run: |
@@ -89,26 +89,26 @@ jobs:
     name: Deploy Preview
     needs: quality-checks
     if: github.event_name == 'pull_request'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
-        
+
       - name: Pull Vercel Environment Information
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
-        
+
       - name: Build Project Artifacts
         run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
-        
+
       - name: Deploy Project Artifacts to Vercel
         id: deploy
         run: |
           url=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
           echo "preview_url=$url" >> $GITHUB_OUTPUT
-          
+
       - name: Comment PR with preview URL
         uses: actions/github-script@v7
         if: github.event_name == 'pull_request'
@@ -124,30 +124,30 @@ jobs:
   # Production deployment job
   deploy-production:
     runs-on: ubuntu-latest
-    name: Deploy Production  
+    name: Deploy Production
     needs: [quality-checks, codegen-analysis]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     # Skip codegen-analysis requirement if it's skipped (not a PR)
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
-        
+
       - name: Pull Vercel Environment Information
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-        
+
       - name: Build Project Artifacts
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-        
+
       - name: Deploy Project Artifacts to Vercel
         id: deploy
         run: |
           url=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
           echo "production_url=$url" >> $GITHUB_OUTPUT
-          
+
       - name: Create deployment summary
         run: |
           echo "## 🚀 Production Deployment Successful!" >> $GITHUB_STEP_SUMMARY

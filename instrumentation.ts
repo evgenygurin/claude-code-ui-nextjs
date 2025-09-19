@@ -2,9 +2,11 @@ import * as Sentry from '@sentry/nextjs';
 
 export async function register() {
   const dsn = process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN;
-  
+
   if (!dsn) {
-    console.warn('[Sentry] No DSN found, Sentry will not be initialized on server');
+    console.warn(
+      '[Sentry] No DSN found, Sentry will not be initialized on server'
+    );
     return;
   }
 
@@ -35,11 +37,14 @@ export async function register() {
 }
 
 // Capture errors from React Server Components
-export async function onRequestError(error: Error, request: {
-  url: string;
-  method: string;
-  headers: { [key: string]: string };
-}) {
+export async function onRequestError(
+  error: Error,
+  request: {
+    url: string;
+    method: string;
+    headers: { [key: string]: string };
+  }
+) {
   Sentry.captureException(error, {
     tags: {
       url: request.url,

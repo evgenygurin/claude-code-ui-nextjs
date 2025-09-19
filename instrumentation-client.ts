@@ -1,6 +1,6 @@
 // This file configures the initialization of Sentry on the browser
 // Required for Turbopack compatibility
-import * as Sentry from "@sentry/nextjs";
+import * as Sentry from '@sentry/nextjs';
 
 // Only initialize Sentry if DSN is provided
 const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
@@ -33,9 +33,9 @@ if (dsn) {
     // CodeGen integration - set via initialScope
     initialScope: {
       tags: {
-        component: "claude-code-ui",
-        platform: "nextjs",
-        codegen: "enabled",
+        component: 'claude-code-ui',
+        platform: 'nextjs',
+        codegen: 'enabled',
       },
     },
 
@@ -50,7 +50,9 @@ if (dsn) {
     },
   });
 } else {
-  console.warn('[Sentry] NEXT_PUBLIC_SENTRY_DSN not found, Sentry will not be initialized');
+  console.warn(
+    '[Sentry] NEXT_PUBLIC_SENTRY_DSN not found, Sentry will not be initialized'
+  );
 }
 
 // Export navigation instrumentation - required for router tracking

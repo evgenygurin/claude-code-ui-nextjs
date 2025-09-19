@@ -16,26 +16,24 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center p-8">
-        <h2 className="text-2xl font-bold text-red-600 mb-4">
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="p-8 text-center">
+        <h2 className="mb-4 text-2xl font-bold text-red-600">
           Something went wrong!
         </h2>
-        <p className="text-gray-600 mb-4">
-          Error has been reported to Sentry
-        </p>
-        <details className="mb-4 text-left max-w-md mx-auto">
+        <p className="mb-4 text-gray-600">Error has been reported to Sentry</p>
+        <details className="mx-auto mb-4 max-w-md text-left">
           <summary className="cursor-pointer text-sm text-gray-500">
             Error details
           </summary>
-          <pre className="mt-2 p-2 bg-gray-100 rounded text-xs overflow-auto">
+          <pre className="mt-2 overflow-auto rounded bg-gray-100 p-2 text-xs">
             {error.message}
             {error.stack}
           </pre>
         </details>
         <button
           onClick={reset}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
         >
           Try again
         </button>

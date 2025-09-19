@@ -100,7 +100,7 @@ jobs:
           command: |
             echo "🔍 Scanning for hardcoded secrets..."
             trufflehog filesystem --directory=. --exclude-paths=.trufflehogignore --no-verification --json > trufflehog-results.json || true
-            
+
             # Check if results file exists and has content
             if [ -s trufflehog-results.json ]; then
               echo "❌ SECURITY ALERT: Potential secrets detected!"

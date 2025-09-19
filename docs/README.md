@@ -12,7 +12,7 @@ Modern web interface for Claude Code CLI and Cursor CLI built with Next.js 15, p
 Claude Code UI is a comprehensive web application that provides a beautiful, responsive interface for interacting with Claude Code and Cursor CLI tools. Built with modern technologies and best practices, it offers:
 
 - **Real-time AI Chat Interface** - Communicate with Claude and Cursor AI
-- **Integrated Terminal** - Direct CLI access through web browser  
+- **Integrated Terminal** - Direct CLI access through web browser
 - **File Management** - Browse, edit, and manage project files
 - **Git Integration** - Full Git workflow support
 - **Mobile Responsive** - Works perfectly on all devices
@@ -38,6 +38,7 @@ The application follows a modern, scalable architecture:
 ### Technology Stack
 
 #### Frontend
+
 - **Next.js 15** - React framework with App Router
 - **React 19** - Latest React with concurrent features
 - **TypeScript** - Type-safe development
@@ -46,6 +47,7 @@ The application follows a modern, scalable architecture:
 - **shadcn/ui** - High-quality React components
 
 #### Backend
+
 - **Next.js API Routes** - Serverless API endpoints
 - **Vercel Edge Functions** - Ultra-fast serverless functions
 - **WebSockets** - Real-time communication
@@ -53,6 +55,7 @@ The application follows a modern, scalable architecture:
 - **Prisma** - Database ORM
 
 #### Infrastructure
+
 - **Vercel** - Hosting and deployment
 - **PostgreSQL** - Primary database
 - **Vercel KV** - Redis-compatible caching
@@ -63,46 +66,54 @@ The application follows a modern, scalable architecture:
 This documentation is organized into several sections:
 
 ### 🏁 Getting Started
+
 - [Installation Guide](./setup/installation.md) - Step-by-step setup
 - [Environment Configuration](./setup/environment.md) - Environment variables
 - [Development Setup](./setup/development.md) - Local development
 
 ### 🏛️ Architecture
+
 - [System Overview](./architecture/overview.md) - High-level architecture
 - [Frontend Architecture](./architecture/frontend.md) - Client-side structure
 - [Backend Architecture](./architecture/backend.md) - Server-side structure
 - [Database Schema](./architecture/database.md) - Data models
 
 ### 🚀 Deployment
+
 - [Vercel Deployment](./deployment/vercel.md) - Deploy to Vercel
 - [Self-Hosted Setup](./deployment/self-hosted.md) - Custom deployment
 - [CI/CD Pipeline](./deployment/ci-cd.md) - Automated deployment
 
 ### 📡 API Reference
+
 - [REST API](./api/reference.md) - HTTP endpoints
 - [WebSocket API](./api/websocket.md) - Real-time communication
 - [Authentication](./api/authentication.md) - Auth flow
 - [Rate Limiting](./api/rate-limiting.md) - Usage limits
 
 ### 🧩 Components
+
 - [Component Library](./components/overview.md) - All available components
 - [v0 Integration](./components/v0-integration.md) - Using v0 components
 - [Custom Components](./components/custom.md) - Building custom UI
 - [Theming Guide](./components/theming.md) - Customizing appearance
 
 ### 🔧 Development
+
 - [Contributing Guide](./guides/contributing.md) - How to contribute
 - [Code Style](./guides/code-style.md) - Coding standards
 - [Testing](./guides/testing.md) - Testing strategy
 - [Performance](./guides/performance.md) - Optimization tips
 
 ### 🔐 Security
+
 - [Security Overview](./security/overview.md) - Security measures
 - [Authentication](./security/authentication.md) - User auth
 - [Authorization](./security/authorization.md) - Permissions
 - [Best Practices](./security/best-practices.md) - Security guidelines
 
 ### 📖 Examples
+
 - [Basic Usage](./examples/basic-setup.md) - Getting started
 - [Custom Themes](./examples/custom-themes.md) - Theme customization
 - [Plugin Development](./examples/plugin-system.md) - Extending functionality
@@ -112,7 +123,7 @@ This documentation is organized into several sections:
 
 ### Prerequisites
 
-- Node.js 20+ 
+- Node.js 20+
 - npm 10+
 - Claude Code CLI or Cursor CLI installed
 - Git
@@ -120,23 +131,27 @@ This documentation is organized into several sections:
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/your-org/claude-code-ui-nextjs.git
    cd claude-code-ui-nextjs
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Set up environment variables**
+
    ```bash
    cp .env.example .env
    # Edit .env with your configuration
    ```
 
 4. **Start development server**
+
    ```bash
    npm run dev
    ```
@@ -156,6 +171,7 @@ This documentation is organized into several sections:
 ## 🔗 Key Features
 
 ### 💬 AI Chat Interface
+
 - Real-time streaming responses
 - Code syntax highlighting
 - File attachment support
@@ -163,6 +179,7 @@ This documentation is organized into several sections:
 - Session management
 
 ### 🖥️ Integrated Terminal
+
 - Web-based terminal emulator
 - Claude Code CLI integration
 - Cursor CLI support
@@ -170,6 +187,7 @@ This documentation is organized into several sections:
 - Multiple sessions
 
 ### 📁 File Management
+
 - Tree-view file explorer
 - Syntax-highlighted editor
 - Real-time file watching
@@ -177,6 +195,7 @@ This documentation is organized into several sections:
 - Version control integration
 
 ### 🌿 Git Integration
+
 - Visual diff viewer
 - Branch management
 - Commit history
@@ -184,6 +203,7 @@ This documentation is organized into several sections:
 - Pull request integration
 
 ### 📱 Mobile Experience
+
 - Responsive design
 - Touch-optimized interface
 - Offline capabilities
@@ -223,6 +243,7 @@ This project is licensed under the MIT License - see the [LICENSE](../LICENSE) f
 ## 🗺️ Roadmap
 
 ### Version 1.0 (Current)
+
 - ✅ Basic chat interface
 - ✅ File management
 - ✅ Terminal integration
@@ -230,6 +251,7 @@ This project is licensed under the MIT License - see the [LICENSE](../LICENSE) f
 - ✅ Mobile responsive
 
 ### Version 1.1 (Next)
+
 - 🔄 Advanced Git features
 - 🔄 Plugin system
 - 🔄 Collaborative editing
@@ -237,6 +259,7 @@ This project is licensed under the MIT License - see the [LICENSE](../LICENSE) f
 - 🔄 Enhanced mobile experience
 
 ### Version 2.0 (Future)
+
 - 📋 Multi-project workspaces
 - 📋 Team collaboration
 - 📋 Advanced AI features

@@ -16,7 +16,7 @@ class NotificationManager {
     this.healthDir = '.health-monitoring';
     this.alertsDir = path.join(this.healthDir, 'alerts');
     this.reportsDir = path.join(this.healthDir, 'reports');
-    
+
     this.config = this.loadConfiguration();
     this.ensureDirectories();
   }
@@ -27,10 +27,10 @@ class NotificationManager {
         console.warn('⚠️  Notification config not found, using defaults');
         return this.getDefaultConfig();
       }
-      
+
       const configContent = fs.readFileSync(this.configPath, 'utf8');
       const config = JSON.parse(configContent);
-      
+
       // Replace environment variables in config
       return this.resolveEnvironmentVariables(config);
     } catch (error) {
@@ -45,11 +45,11 @@ class NotificationManager {
         return process.env[varName] || match;
       });
     }
-    
+
     if (Array.isArray(obj)) {
       return obj.map(item => this.resolveEnvironmentVariables(item));
     }
-    
+
     if (obj && typeof obj === 'object') {
       const resolved = {};
       for (const [key, value] of Object.entries(obj)) {
@@ -57,7 +57,7 @@ class NotificationManager {
       }
       return resolved;
     }
-    
+
     return obj;
   }
 
@@ -66,14 +66,17 @@ class NotificationManager {
       notification_settings: {
         enabled: true,
         channels: {
-          github_issues: { enabled: true, priority_levels: ['critical', 'high'] }
-        }
+          github_issues: {
+            enabled: true,
+            priority_levels: ['critical', 'high'],
+          },
+        },
       },
       escalation_rules: { enabled: true, levels: [] },
       health_thresholds: {
         critical: { score_max: 50, escalation_time_minutes: 30 },
-        degraded: { score_max: 70, escalation_time_minutes: 120 }
-      }
+        degraded: { score_max: 70, escalation_time_minutes: 120 },
+      },
     };
   }
 
@@ -87,7 +90,9 @@ class NotificationManager {
 
   async processHealthAlert(healthData) {
     console.log('🔔 Processing health alert...');
-    console.log(`Health Status: ${healthData.status}, Score: ${healthData.score}/100`);
+    console.log(
+      `Health Status: ${healthData.status}, Score: ${healthData.score}/100`
+    );
 
     if (!this.config.notification_settings.enabled) {
       console.log('📵 Notifications are disabled');
@@ -96,7 +101,9 @@ class NotificationManager {
 
     // Determine escalation level
     const escalationLevel = this.determineEscalationLevel(healthData);
-    console.log(`📈 Escalation Level: ${escalationLevel.name} (${escalationLevel.priority})`);
+    console.log(
+      `📈 Escalation Level: ${escalationLevel.name} (${escalationLevel.priority})`
+    );
 
     // Create alert record
     const alert = await this.createAlert(healthData, escalationLevel);
@@ -113,7 +120,7 @@ class NotificationManager {
 
   determineEscalationLevel(healthData) {
     const { escalation_rules } = this.config;
-    
+
     if (!escalation_rules.enabled || !escalation_rules.levels) {
       return { name: 'standard', priority: 'medium', actions: [] };
     }
@@ -126,8 +133,13 @@ class NotificationManager {
     }
 
     // Default escalation level
-    return escalation_rules.levels[escalation_rules.levels.length - 1] || 
-           { name: 'standard', priority: 'medium', actions: [] };
+    return (
+      escalation_rules.levels[escalation_rules.levels.length - 1] || {
+        name: 'standard',
+        priority: 'medium',
+        actions: [],
+      }
+    );
   }
 
   matchesConditions(healthData, conditions) {
@@ -140,23 +152,33 @@ class NotificationManager {
           const searchTerm = condition.match(/'([^']+)'/)?.[1];
           return searchTerm && healthData.errorType?.includes(searchTerm);
         }
-        
-        if (condition.includes('improvement') && healthData.errorType?.includes('improvement')) {
+
+        if (
+          condition.includes('improvement') &&
+          healthData.errorType?.includes('improvement')
+        ) {
           return true;
         }
-        
+
         if (condition.includes('health_score')) {
-          const operator = condition.includes('<') ? '<' : condition.includes('>') ? '>' : '=';
+          const operator = condition.includes('<')
+            ? '<'
+            : condition.includes('>')
+              ? '>'
+              : '=';
           const value = parseInt(condition.match(/\d+/)?.[0]);
-          
+
           if (operator === '<') return healthData.score < value;
           if (operator === '>') return healthData.score > value;
           if (operator === '=') return healthData.score === value;
         }
-        
+
         return false;
       } catch (error) {
-        console.warn(`⚠️  Error evaluating condition "${condition}":`, error.message);
+        console.warn(
+          `⚠️  Error evaluating condition "${condition}":`,
+          error.message
+        );
         return false;
       }
     });
@@ -177,48 +199,49 @@ class NotificationManager {
       metadata: {
         created_by: 'post-merge-monitoring',
         environment: process.env.NODE_ENV || 'development',
-        repository: process.env.GITHUB_REPOSITORY || 'unknown'
-      }
+        repository: process.env.GITHUB_REPOSITORY || 'unknown',
+      },
     };
 
     // Save alert
     const alertFile = path.join(this.alertsDir, `${alert.id}.json`);
     fs.writeFileSync(alertFile, JSON.stringify(alert, null, 2));
-    
+
     console.log(`📝 Alert created: ${alertFile}`);
     return alert;
   }
 
   async executeEscalationActions(alert, escalationLevel) {
-    console.log(`🎬 Executing ${escalationLevel.actions?.length || 0} escalation actions...`);
+    console.log(
+      `🎬 Executing ${escalationLevel.actions?.length || 0} escalation actions...`
+    );
 
     if (!escalationLevel.actions) return;
 
     for (const action of escalationLevel.actions) {
       try {
         console.log(`🔧 Executing action: ${action}`);
-        
+
         const result = await this.executeAction(action, alert);
-        
+
         alert.actions_taken.push({
           action,
           timestamp: new Date().toISOString(),
           result: result.success ? 'success' : 'failed',
-          details: result.details || 'No details provided'
+          details: result.details || 'No details provided',
         });
-        
+
         // Update alert file
         const alertFile = path.join(this.alertsDir, `${alert.id}.json`);
         fs.writeFileSync(alertFile, JSON.stringify(alert, null, 2));
-        
       } catch (error) {
         console.error(`❌ Failed to execute action ${action}:`, error.message);
-        
+
         alert.actions_taken.push({
           action,
           timestamp: new Date().toISOString(),
           result: 'error',
-          details: error.message
+          details: error.message,
         });
       }
     }
@@ -228,40 +251,40 @@ class NotificationManager {
     switch (actionName) {
       case 'create_github_issue':
         return await this.createGitHubIssue(alert);
-        
+
       case 'create_github_comment':
         return await this.createGitHubComment(alert);
-        
+
       case 'trigger_codegen_immediate':
         return await this.triggerCodeGenIntervention(alert, 'immediate');
-        
+
       case 'trigger_codegen_scheduled':
         return await this.triggerCodeGenIntervention(alert, 'scheduled');
-        
+
       case 'schedule_health_monitoring':
         return await this.scheduleHealthMonitoring(alert);
-        
+
       case 'schedule_followup_30min':
         return await this.scheduleFollowUp(alert, 30);
-        
+
       case 'schedule_followup_2hours':
         return await this.scheduleFollowUp(alert, 120);
-        
+
       case 'schedule_followup_6hours':
         return await this.scheduleFollowUp(alert, 360);
-        
+
       case 'update_baselines':
         return await this.updateHealthBaselines(alert);
-        
+
       case 'document_success':
         return await this.documentSuccess(alert);
-        
+
       case 'send_email_notification':
         return await this.sendEmailNotification(alert);
-        
+
       case 'send_slack_notification':
         return await this.sendSlackNotification(alert);
-        
+
       default:
         console.warn(`⚠️  Unknown action: ${actionName}`);
         return { success: false, details: 'Unknown action type' };
@@ -274,7 +297,7 @@ class NotificationManager {
     }
 
     console.log('📝 Creating GitHub issue...');
-    
+
     const issueTitle = this.generateIssueTitle(alert);
     const issueBody = this.generateIssueBody(alert);
     const labels = this.getIssueLabels(alert);
@@ -284,23 +307,24 @@ class NotificationManager {
     console.log(`Labels: ${labels.join(', ')}`);
     console.log('Body preview:', issueBody.substring(0, 200) + '...');
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       details: `GitHub issue would be created with title: "${issueTitle}"`,
-      issue_url: 'https://github.com/example/repo/issues/123' // Mock URL
+      issue_url: 'https://github.com/example/repo/issues/123', // Mock URL
     };
   }
 
   generateIssueTitle(alert) {
     const { health_data, priority, escalation_level } = alert;
-    const emoji = priority === 'critical' ? '🚨' : priority === 'high' ? '⚠️' : '📊';
-    
+    const emoji =
+      priority === 'critical' ? '🚨' : priority === 'high' ? '⚠️' : '📊';
+
     return `${emoji} Post-Merge Health Alert: ${health_data.status.toUpperCase()} - Score: ${health_data.score}/100 [${escalation_level}]`;
   }
 
   generateIssueBody(alert) {
     const { health_data, timestamp, escalation_level } = alert;
-    
+
     return `## 🏥 Post-Merge Health Monitoring Alert
 
 **Alert Details:**
@@ -342,70 +366,73 @@ class NotificationManager {
 
   getIssueLabels(alert) {
     const { priority } = alert;
-    const labelsConfig = this.config.notification_settings.channels.github_issues?.labels;
-    
-    return labelsConfig?.[priority] || ['post-merge', 'health-monitoring', priority];
+    const labelsConfig =
+      this.config.notification_settings.channels.github_issues?.labels;
+
+    return (
+      labelsConfig?.[priority] || ['post-merge', 'health-monitoring', priority]
+    );
   }
 
   async createGitHubComment(alert) {
     console.log('💬 Creating GitHub comment...');
-    
+
     // In a real implementation, would add comment to existing issue or PR
-    return { 
-      success: true, 
+    return {
+      success: true,
       details: 'GitHub comment would be created',
-      comment_url: 'https://github.com/example/repo/issues/123#comment-456'
+      comment_url: 'https://github.com/example/repo/issues/123#comment-456',
     };
   }
 
   async triggerCodeGenIntervention(alert, urgency) {
     console.log(`🤖 Triggering CodeGen intervention (${urgency})...`);
-    
+
     try {
       const CodeGenErrorHandler = require('./codegen-error-handler');
       const errorHandler = new CodeGenErrorHandler();
-      
+
       const errorType = `post_merge_health_${alert.escalation_level}`;
       const errorDetails = `Health monitoring alert: ${alert.health_data.status} status, score ${alert.health_data.score}/100, issues: ${alert.health_data.issues?.join(', ') || 'none'}`;
-      
+
       await errorHandler.handleError(errorType, errorDetails);
-      
-      return { 
-        success: true, 
-        details: `CodeGen intervention triggered with urgency: ${urgency}` 
+
+      return {
+        success: true,
+        details: `CodeGen intervention triggered with urgency: ${urgency}`,
       };
     } catch (error) {
-      return { 
-        success: false, 
-        details: `Failed to trigger CodeGen intervention: ${error.message}` 
+      return {
+        success: false,
+        details: `Failed to trigger CodeGen intervention: ${error.message}`,
       };
     }
   }
 
   async scheduleHealthMonitoring(alert) {
     console.log('📅 Scheduling health monitoring...');
-    
+
     try {
       const TaskScheduler = require('./task-scheduler');
       const scheduler = new TaskScheduler();
-      
+
       const interval = this.getMonitoringInterval(alert.health_data.status);
-      
+
       await scheduler.scheduleHealthMonitoring({
         status: alert.health_data.status,
         score: alert.health_data.score,
         issues: alert.health_data.issues?.join(',') || '',
-        interval
+        interval,
       });
-      
-      return { 
-        success: true, 
-        details: `Health monitoring scheduled with interval: ${interval}` 
+
+      return {
+        success: true,
+        details: `Health monitoring scheduled with interval: ${interval}`,
       };
     } catch (error) {
-      return { 
-        success: false, 
-        details: `Failed to schedule health monitoring: ${error.message}` 
+      return {
+        success: false,
+        details: `Failed to schedule health monitoring: ${error.message}`,
       };
     }
   }
@@ -415,70 +442,70 @@ class NotificationManager {
       critical: '15m',
       degraded: '1h',
       warning: '6h',
-      healthy: '24h'
+      healthy: '24h',
     };
     return intervals[healthStatus] || '6h';
   }
 
   async scheduleFollowUp(alert, delayMinutes) {
     console.log(`⏰ Scheduling follow-up in ${delayMinutes} minutes...`);
-    
+
     try {
-      const followUpTime = new Date(Date.now() + (delayMinutes * 60 * 1000));
-      
+      const followUpTime = new Date(Date.now() + delayMinutes * 60 * 1000);
+
       const followUpTask = {
         id: `followup-${alert.id}-${Date.now()}`,
         type: 'alert_followup',
         alert_id: alert.id,
         scheduled_for: followUpTime.toISOString(),
         delay_minutes: delayMinutes,
-        status: 'scheduled'
+        status: 'scheduled',
       };
-      
+
       alert.follow_up_scheduled.push(followUpTask);
-      
+
       // In a real implementation, this would integrate with a job scheduler
-      return { 
-        success: true, 
-        details: `Follow-up scheduled for ${followUpTime.toISOString()}` 
+      return {
+        success: true,
+        details: `Follow-up scheduled for ${followUpTime.toISOString()}`,
       };
     } catch (error) {
-      return { 
-        success: false, 
-        details: `Failed to schedule follow-up: ${error.message}` 
+      return {
+        success: false,
+        details: `Failed to schedule follow-up: ${error.message}`,
       };
     }
   }
 
   async updateHealthBaselines(alert) {
     console.log('📊 Updating health baselines...');
-    
+
     try {
       const baselinesDir = path.join(this.healthDir, 'baselines');
       if (!fs.existsSync(baselinesDir)) {
         fs.mkdirSync(baselinesDir, { recursive: true });
       }
-      
+
       const today = new Date().toISOString().split('T')[0].replace(/-/g, '');
       const baselineFile = path.join(baselinesDir, `health-score-${today}.txt`);
-      
+
       fs.writeFileSync(baselineFile, alert.health_data.score.toString());
-      
-      return { 
-        success: true, 
-        details: `Baseline updated with score: ${alert.health_data.score}` 
+
+      return {
+        success: true,
+        details: `Baseline updated with score: ${alert.health_data.score}`,
       };
     } catch (error) {
-      return { 
-        success: false, 
-        details: `Failed to update baselines: ${error.message}` 
+      return {
+        success: false,
+        details: `Failed to update baselines: ${error.message}`,
       };
     }
   }
 
   async documentSuccess(alert) {
     console.log('📝 Documenting success...');
-    
+
     try {
       const successReport = {
         timestamp: new Date().toISOString(),
@@ -489,65 +516,70 @@ class NotificationManager {
         recommendations: [
           'Continue current practices',
           'Monitor for sustained improvement',
-          'Update team on successful resolution'
-        ]
+          'Update team on successful resolution',
+        ],
       };
-      
-      const reportFile = path.join(this.reportsDir, `success-${Date.now()}.json`);
+
+      const reportFile = path.join(
+        this.reportsDir,
+        `success-${Date.now()}.json`
+      );
       fs.writeFileSync(reportFile, JSON.stringify(successReport, null, 2));
-      
-      return { 
-        success: true, 
-        details: `Success documented in ${reportFile}` 
+
+      return {
+        success: true,
+        details: `Success documented in ${reportFile}`,
       };
     } catch (error) {
-      return { 
-        success: false, 
-        details: `Failed to document success: ${error.message}` 
+      return {
+        success: false,
+        details: `Failed to document success: ${error.message}`,
       };
     }
   }
 
   async sendEmailNotification(alert) {
     console.log('📧 Sending email notification...');
-    
+
     // Email functionality would be implemented here
-    return { 
-      success: true, 
-      details: 'Email notification would be sent (not implemented)' 
+    return {
+      success: true,
+      details: 'Email notification would be sent (not implemented)',
     };
   }
 
   async sendSlackNotification(alert) {
     console.log('💬 Sending Slack notification...');
-    
+
     // Slack integration would be implemented here
-    return { 
-      success: true, 
-      details: 'Slack notification would be sent (not implemented)' 
+    return {
+      success: true,
+      details: 'Slack notification would be sent (not implemented)',
     };
   }
 
   async scheduleFollowUpActions(alert, escalationLevel) {
-    const followUpConfig = this.config.follow_up_schedule?.[`${alert.health_data.status}_health`] ||
-                          this.config.follow_up_schedule?.critical_issues ||
-                          [];
+    const followUpConfig =
+      this.config.follow_up_schedule?.[`${alert.health_data.status}_health`] ||
+      this.config.follow_up_schedule?.critical_issues ||
+      [];
 
     console.log(`⏰ Scheduling ${followUpConfig.length} follow-up actions...`);
 
     for (const followUp of followUpConfig) {
-      const delayMs = (followUp.delay_minutes || 0) * 60 * 1000 + 
-                      (followUp.delay_hours || 0) * 60 * 60 * 1000;
-      
+      const delayMs =
+        (followUp.delay_minutes || 0) * 60 * 1000 +
+        (followUp.delay_hours || 0) * 60 * 60 * 1000;
+
       const scheduledTime = new Date(Date.now() + delayMs);
-      
+
       alert.follow_up_scheduled.push({
         action: followUp.action,
         scheduled_for: scheduledTime.toISOString(),
-        delay_description: followUp.delay_minutes ? 
-          `${followUp.delay_minutes} minutes` : 
-          `${followUp.delay_hours} hours`,
-        status: 'scheduled'
+        delay_description: followUp.delay_minutes
+          ? `${followUp.delay_minutes} minutes`
+          : `${followUp.delay_hours} hours`,
+        status: 'scheduled',
       });
     }
 
@@ -561,7 +593,8 @@ class NotificationManager {
       return [];
     }
 
-    const alertFiles = fs.readdirSync(this.alertsDir)
+    const alertFiles = fs
+      .readdirSync(this.alertsDir)
       .filter(file => file.endsWith('.json') && file.startsWith('alert-'));
 
     const alerts = [];
@@ -569,7 +602,7 @@ class NotificationManager {
       try {
         const alertPath = path.join(this.alertsDir, file);
         const alert = JSON.parse(fs.readFileSync(alertPath, 'utf8'));
-        
+
         if (alert.status === 'open') {
           alerts.push(alert);
         }
@@ -583,19 +616,19 @@ class NotificationManager {
 
   async resolveAlert(alertId, resolution) {
     const alertFile = path.join(this.alertsDir, `${alertId}.json`);
-    
+
     if (!fs.existsSync(alertFile)) {
       throw new Error(`Alert ${alertId} not found`);
     }
 
     const alert = JSON.parse(fs.readFileSync(alertFile, 'utf8'));
-    
+
     alert.status = 'resolved';
     alert.resolution_time = new Date().toISOString();
     alert.resolution = resolution;
 
     fs.writeFileSync(alertFile, JSON.stringify(alert, null, 2));
-    
+
     console.log(`✅ Alert ${alertId} resolved: ${resolution}`);
     return alert;
   }
@@ -612,19 +645,21 @@ if (require.main === module) {
         const healthData = JSON.parse(process.argv[3] || '{}');
         await manager.processHealthAlert(healthData);
         break;
-        
+
       case 'active-alerts':
         const alerts = await manager.getActiveAlerts();
         console.log(`\n📊 Active Alerts: ${alerts.length}`);
         alerts.forEach((alert, index) => {
           console.log(`\n${index + 1}. ${alert.id}`);
           console.log(`   Priority: ${alert.priority}`);
-          console.log(`   Health: ${alert.health_data.status} (${alert.health_data.score}/100)`);
+          console.log(
+            `   Health: ${alert.health_data.status} (${alert.health_data.score}/100)`
+          );
           console.log(`   Created: ${alert.timestamp}`);
           console.log(`   Actions: ${alert.actions_taken.length} completed`);
         });
         break;
-        
+
       case 'resolve-alert':
         const alertId = process.argv[3];
         const resolution = process.argv[4] || 'Manually resolved';
@@ -634,7 +669,7 @@ if (require.main === module) {
         }
         await manager.resolveAlert(alertId, resolution);
         break;
-        
+
       case 'help':
       default:
         console.log(`

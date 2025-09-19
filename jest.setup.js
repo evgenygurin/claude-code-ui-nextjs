@@ -1,4 +1,4 @@
-import '@testing-library/jest-dom'
+import '@testing-library/jest-dom';
 
 // Mock Next.js router
 jest.mock('next/navigation', () => ({
@@ -10,15 +10,15 @@ jest.mock('next/navigation', () => ({
       forward: jest.fn(),
       refresh: jest.fn(),
       prefetch: jest.fn(),
-    }
+    };
   },
   usePathname() {
-    return '/'
+    return '/';
   },
   useSearchParams() {
-    return new URLSearchParams()
+    return new URLSearchParams();
   },
-}))
+}));
 
 // Mock WebSocket
 global.WebSocket = jest.fn(() => ({
@@ -27,21 +27,21 @@ global.WebSocket = jest.fn(() => ({
   addEventListener: jest.fn(),
   removeEventListener: jest.fn(),
   readyState: 1,
-}))
+}));
 
 // Mock IntersectionObserver
 global.IntersectionObserver = jest.fn(() => ({
   observe: jest.fn(),
   unobserve: jest.fn(),
   disconnect: jest.fn(),
-}))
+}));
 
 // Mock ResizeObserver
 global.ResizeObserver = jest.fn(() => ({
   observe: jest.fn(),
   unobserve: jest.fn(),
   disconnect: jest.fn(),
-}))
+}));
 
 // Mock matchMedia
 Object.defineProperty(window, 'matchMedia', {
@@ -56,30 +56,32 @@ Object.defineProperty(window, 'matchMedia', {
     removeEventListener: jest.fn(),
     dispatchEvent: jest.fn(),
   })),
-})
+});
 
 // Mock window.scrollTo
 Object.defineProperty(window, 'scrollTo', {
   value: jest.fn(),
   writable: true,
-})
+});
 
 // Mock HTMLElement.scrollIntoView
 Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
   value: jest.fn(),
   writable: true,
-})
+});
 
 // Mock Sentry
 jest.mock('@sentry/nextjs', () => ({
   init: jest.fn(),
   captureException: jest.fn(),
   captureMessage: jest.fn(),
-  withScope: jest.fn((callback) => callback({
-    setTag: jest.fn(),
-    setContext: jest.fn(),
-  })),
-}))
+  withScope: jest.fn(callback =>
+    callback({
+      setTag: jest.fn(),
+      setContext: jest.fn(),
+    })
+  ),
+}));
 
 // Suppress console errors and warnings in tests unless explicitly needed
 const originalError = console.error;
@@ -89,9 +91,9 @@ beforeAll(() => {
   console.error = (...args) => {
     if (
       typeof args[0] === 'string' &&
-      (args[0].includes('Warning:') || 
-       args[0].includes('Error:') ||
-       args[0].includes('act()'))
+      (args[0].includes('Warning:') ||
+        args[0].includes('Error:') ||
+        args[0].includes('act()'))
     ) {
       return;
     }
@@ -99,10 +101,7 @@ beforeAll(() => {
   };
 
   console.warn = (...args) => {
-    if (
-      typeof args[0] === 'string' &&
-      args[0].includes('Warning:')
-    ) {
+    if (typeof args[0] === 'string' && args[0].includes('Warning:')) {
       return;
     }
     originalWarn.call(console, ...args);
@@ -116,5 +115,5 @@ afterAll(() => {
 
 // Clean up after each test
 afterEach(() => {
-  jest.clearAllMocks()
-})
+  jest.clearAllMocks();
+});

@@ -7,11 +7,7 @@
   "health_data": {
     "status": "critical",
     "score": 35,
-    "issues": [
-      "build",
-      "tests",
-      "type_checking"
-    ],
+    "issues": ["build", "tests", "type_checking"],
     "errorType": "post_merge_health_critical_degradation",
     "branch": "main",
     "commit": "test-commit-critical"

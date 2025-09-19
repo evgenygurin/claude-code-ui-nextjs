@@ -47,7 +47,7 @@ export function FileOperationsComponent() {
     const result = await mcpClient.callTool('read_file', {
       path: filePath
     });
-    
+
     return result.content;
   };
 
@@ -57,7 +57,7 @@ export function FileOperationsComponent() {
     const result = await mcpClient.callTool('list_directory', {
       path: dirPath
     });
-    
+
     return result.files;
   };
 
@@ -164,7 +164,7 @@ export function DatabaseQueryComponent() {
         sql,
         connection: process.env.DATABASE_CONNECTION_STRING
       });
-      
+
       setQueryResult(result);
     } catch (error) {
       console.error('Query failed:', error);
@@ -173,7 +173,7 @@ export function DatabaseQueryComponent() {
 
   return (
     <div>
-      <textarea 
+      <textarea
         placeholder="Enter SQL query..."
         onKeyDown={(e) => {
           if (e.key === 'Enter' && e.ctrlKey) {
@@ -184,7 +184,7 @@ export function DatabaseQueryComponent() {
       <button onClick={() => executeQuery('SELECT * FROM users LIMIT 10')}>
         Execute Query
       </button>
-      
+
       {queryResult && (
         <pre>{JSON.stringify(queryResult, null, 2)}</pre>
       )}
@@ -203,7 +203,7 @@ import { MCPServer } from '@anthropic/mcp-sdk';
 
 const server = new MCPServer({
   name: 'custom-tools',
-  version: '1.0.0'
+  version: '1.0.0',
 });
 
 // Register a custom tool
@@ -213,9 +213,9 @@ server.registerTool({
   inputSchema: {
     type: 'object',
     properties: {
-      location: { type: 'string' }
+      location: { type: 'string' },
     },
-    required: ['location']
+    required: ['location'],
   },
   handler: async ({ location }) => {
     // Your weather API integration
@@ -223,9 +223,9 @@ server.registerTool({
     return {
       temperature: weather.temp,
       condition: weather.condition,
-      location
+      location,
     };
-  }
+  },
 });
 
 // Start server
@@ -248,7 +248,7 @@ export function WeatherWidget() {
 
   return (
     <div className="weather-widget">
-      <input 
+      <input
         type="text"
         placeholder="Enter location..."
         onKeyDown={(e) => {
@@ -257,7 +257,7 @@ export function WeatherWidget() {
           }
         }}
       />
-      
+
       {weather && (
         <div>
           <h3>{weather.location}</h3>
@@ -280,19 +280,19 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   const { server, tool, args } = await request.json();
-  
+
   // Route to appropriate MCP server
   const mcpServerUrl = getMCPServerUrl(server);
-  
+
   const response = await fetch(`${mcpServerUrl}/tools/${tool}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.MCP_SERVER_TOKEN}`
+      Authorization: `Bearer ${process.env.MCP_SERVER_TOKEN}`,
     },
-    body: JSON.stringify(args)
+    body: JSON.stringify(args),
   });
-  
+
   const result = await response.json();
   return NextResponse.json(result);
 }
@@ -302,9 +302,9 @@ function getMCPServerUrl(serverName: string): string {
     filesystem: process.env.FILESYSTEM_MCP_URL,
     git: process.env.GIT_MCP_URL,
     database: process.env.DATABASE_MCP_URL,
-    custom: process.env.CUSTOM_MCP_URL
+    custom: process.env.CUSTOM_MCP_URL,
   };
-  
+
   return servers[serverName] || servers.filesystem;
 }
 ```
@@ -315,32 +315,34 @@ function getMCPServerUrl(serverName: string): string {
 // lib/mcp-websocket.ts
 export class MCPWebSocketClient {
   private ws: WebSocket;
-  
+
   constructor(serverUrl: string) {
     this.ws = new WebSocket(serverUrl);
     this.setupEventHandlers();
   }
-  
+
   async callTool(toolName: string, args: any): Promise<any> {
     return new Promise((resolve, reject) => {
       const requestId = generateId();
-      
+
       // Send request
-      this.ws.send(JSON.stringify({
-        id: requestId,
-        method: 'tools/call',
-        params: {
-          name: toolName,
-          arguments: args
-        }
-      }));
-      
+      this.ws.send(
+        JSON.stringify({
+          id: requestId,
+          method: 'tools/call',
+          params: {
+            name: toolName,
+            arguments: args,
+          },
+        })
+      );
+
       // Handle response
       const handler = (event: MessageEvent) => {
         const response = JSON.parse(event.data);
         if (response.id === requestId) {
           this.ws.removeEventListener('message', handler);
-          
+
           if (response.error) {
             reject(new Error(response.error.message));
           } else {
@@ -348,21 +350,21 @@ export class MCPWebSocketClient {
           }
         }
       };
-      
+
       this.ws.addEventListener('message', handler);
     });
   }
-  
+
   private setupEventHandlers() {
     this.ws.onopen = () => {
       console.log('MCP WebSocket connected');
     };
-    
+
     this.ws.onclose = () => {
       console.log('MCP WebSocket disconnected');
     };
-    
-    this.ws.onerror = (error) => {
+
+    this.ws.onerror = error => {
       console.error('MCP WebSocket error:', error);
     };
   }
@@ -377,16 +379,16 @@ export class MCPWebSocketClient {
 // Secure MCP authentication
 const authenticatedMCPCall = async (tool: string, args: any) => {
   const token = await getAuthToken();
-  
+
   const response = await fetch('/api/mcp', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ tool, args })
+    body: JSON.stringify({ tool, args }),
   });
-  
+
   return response.json();
 };
 ```
@@ -400,15 +402,15 @@ const validateMCPInput = (tool: string, args: any): boolean => {
     read_file: {
       type: 'object',
       properties: {
-        path: { type: 'string', pattern: '^[a-zA-Z0-9/._-]+$' }
+        path: { type: 'string', pattern: '^[a-zA-Z0-9/._-]+$' },
       },
-      required: ['path']
-    }
+      required: ['path'],
+    },
   };
-  
+
   const schema = schemas[tool];
   if (!schema) return false;
-  
+
   // Validate against schema
   return validateSchema(args, schema);
 };
@@ -427,16 +429,19 @@ const validateMCPInput = (tool: string, args: any): boolean => {
 ### Common Issues
 
 **MCP Server Not Responding:**
+
 - Check server status and logs
 - Verify network connectivity
 - Ensure correct authentication tokens
 
 **Tool Not Found:**
+
 - Verify tool name spelling
 - Check if tool is properly registered
 - Review MCP server documentation
 
 **Permission Denied:**
+
 - Check authentication tokens
 - Verify user permissions
 - Review security configurations
