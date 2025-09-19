@@ -5,9 +5,40 @@ import Sidebar from '@/components/layout/sidebar';
 jest.mock('framer-motion', () => ({
   motion: {
     div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
+    nav: ({ children, ...props }: any) => <nav {...props}>{children}</nav>,
   },
   AnimatePresence: ({ children }: any) => children,
 }));
+
+// Mock Button component
+jest.mock('@/components/ui/button', () => ({
+  Button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
+}));
+
+// Mock lib/utils
+jest.mock('@/lib/utils', () => ({
+  cn: (...classes: any[]) => classes.filter(Boolean).join(' '),
+}));
+
+// Mock lucide-react icons
+jest.mock('lucide-react', () => {
+  const MockIcon = ({ ...props }: any) => <svg {...props} data-testid="mock-icon">icon</svg>;
+  
+  return {
+    ChevronLeft: MockIcon,
+    ChevronRight: MockIcon,
+    Home: MockIcon,
+    FolderOpen: MockIcon,
+    FileText: MockIcon,
+    MessageSquare: MockIcon,
+    Terminal: MockIcon,
+    GitBranch: MockIcon,
+    Search: MockIcon,
+    Plus: MockIcon,
+    Settings: MockIcon,
+  };
+}, { virtual: true });
 
 describe('Sidebar', () => {
   const defaultProps = {
