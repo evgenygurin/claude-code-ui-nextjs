@@ -17,7 +17,8 @@ on:
   push:
     branches: [main, master]
   schedule:
-    - cron: '0 */6 * * *'
+    # Check for pending tasks every hour
+    - cron: '0 * * * *'
 
 jobs:
   codegen-placeholder:
@@ -153,8 +154,8 @@ If this issue is not resolved within 1 hour, the system will automatically:
         # In a real implementation, this would call the CodeGen API
         # to notify about the workflow status and any pending tasks
         
-        echo "Workflow Status: ${{ needs.codegen-placeholder.result }}"
-        echo "Task Check Status: ${{ needs.check-pending-tasks.result }}"
+        echo "Workflow Status: ${{ needs.codegen-placeholder.result || 'skipped' }}"
+        echo "Task Check Status: ${{ needs.check-pending-tasks.result || 'skipped' }}"
         echo "Repository: ${{ github.repository }}"
         echo "Branch: ${{ github.ref_name }}"
         echo "Commit: ${{ github.sha }}"
