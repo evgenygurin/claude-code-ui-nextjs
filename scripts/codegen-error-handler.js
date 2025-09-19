@@ -125,6 +125,13 @@ class CodeGenErrorHandler {
   }
 
   generateAnalysisPrompt(errorReport) {
+    const isPostMergeIssue = errorReport.errorType.includes('post_merge') || 
+                            errorReport.errorType.includes('health');
+    
+    if (isPostMergeIssue) {
+      return this.generatePostMergeAnalysisPrompt(errorReport);
+    }
+    
     return `🚨 CI/CD Failure detected in ${errorReport.project}
 
 **Error Details:**
@@ -150,6 +157,88 @@ ${errorReport.errorDetails}
 - Build environment details
 
 Please use your standard development workflow: analyze → fix → test → review → PR.`;
+  }
+
+  generatePostMergeAnalysisPrompt(errorReport) {
+    return `🏥 Post-Merge Health Issue detected in ${errorReport.project}
+
+**Health Status Alert:**
+- Branch: ${errorReport.branch}
+- Commit: ${errorReport.commit}
+- Issue Type: ${errorReport.errorType}
+- Detection Time: ${errorReport.timestamp}
+
+**Issue Description:**
+${errorReport.errorDetails}
+
+**🎯 Post-Merge Context:**
+This issue was detected AFTER a PR was successfully merged, indicating that:
+- The merge passed initial CI/CD checks
+- Health degradation occurred post-merge
+- Continuous monitoring system flagged the problem
+- Immediate intervention is required to prevent production issues
+
+@codegen **POST-MERGE INTERVENTION REQUIRED**
+
+## 🚨 Critical Analysis Needed:
+1. **Root Cause Investigation:**
+   - Why did this issue appear after merge when CI passed?
+   - Are there missing test scenarios or edge cases?
+   - Did environmental changes cause the degradation?
+   - Was there a race condition or timing-dependent failure?
+
+2. **Immediate Remediation:**
+   - Fix the detected health issues (${this.extractIssueTypes(errorReport.errorDetails)})
+   - Ensure all CI/CD checks pass again
+   - Verify no regression in other components
+   - Run comprehensive integration tests
+
+3. **Prevention Measures:**
+   - Enhance pre-merge testing to catch similar issues
+   - Improve health monitoring sensitivity
+   - Add missing test coverage for the failure scenarios
+   - Consider adding smoke tests post-merge
+
+4. **System Resilience:**
+   - Update baseline health metrics
+   - Strengthen continuous monitoring
+   - Document the incident for future prevention
+   - Consider rollback strategy if issues persist
+
+## 📊 Health Monitoring Integration:
+- This intervention was triggered by continuous health monitoring
+- System will continue monitoring until health score returns to >90/100
+- Additional escalation will occur if issues persist beyond 2 hours
+- Success will be measured by sustained healthy metrics
+
+**Environment Context:**
+- Project: ${errorReport.project}
+- Build: ${errorReport.buildNumber}
+- Monitoring System: Post-Merge Health Assessment
+- Escalation Level: ${this.determineEscalationLevel(errorReport.errorType)}
+
+Please treat this as a HIGH PRIORITY post-merge incident requiring immediate attention and comprehensive resolution.`;
+  }
+
+  extractIssueTypes(errorDetails) {
+    const commonIssues = ['linting', 'type_checking', 'tests', 'build', 'security'];
+    const detectedIssues = commonIssues.filter(issue => 
+      errorDetails.toLowerCase().includes(issue.replace('_', ' '))
+    );
+    return detectedIssues.length > 0 ? detectedIssues.join(', ') : 'system degradation';
+  }
+
+  determineEscalationLevel(errorType) {
+    if (errorType.includes('critical') || errorType.includes('new_critical_issues')) {
+      return 'CRITICAL - Immediate Action Required';
+    }
+    if (errorType.includes('significant') || errorType.includes('degradation')) {
+      return 'HIGH - Urgent Attention Needed';
+    }
+    if (errorType.includes('trend') || errorType.includes('preventive')) {
+      return 'MEDIUM - Preventive Action';
+    }
+    return 'STANDARD - Regular Monitoring';
   }
 
   async createGitHubComment(prompt, errorReport) {

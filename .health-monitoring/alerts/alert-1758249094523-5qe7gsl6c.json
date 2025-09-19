@@ -1,0 +1,80 @@
+{
+  "id": "alert-1758249094523-5qe7gsl6c",
+  "timestamp": "2025-09-19T02:31:34.523Z",
+  "type": "health_alert",
+  "priority": "critical",
+  "escalation_level": "immediate",
+  "health_data": {
+    "status": "critical",
+    "score": 35,
+    "issues": [
+      "build",
+      "tests",
+      "type_checking"
+    ],
+    "errorType": "post_merge_health_critical_degradation",
+    "branch": "main",
+    "commit": "test-commit-critical"
+  },
+  "status": "open",
+  "actions_taken": [
+    {
+      "action": "create_github_issue",
+      "timestamp": "2025-09-19T02:31:34.523Z",
+      "result": "success",
+      "details": "GitHub issue would be created with title: \"🚨 Post-Merge Health Alert: CRITICAL - Score: 35/100 [immediate]\""
+    },
+    {
+      "action": "trigger_codegen_immediate",
+      "timestamp": "2025-09-19T02:31:34.535Z",
+      "result": "success",
+      "details": "CodeGen intervention triggered with urgency: immediate"
+    },
+    {
+      "action": "schedule_followup_30min",
+      "timestamp": "2025-09-19T02:31:34.535Z",
+      "result": "success",
+      "details": "Follow-up scheduled for 2025-09-19T03:01:34.535Z"
+    }
+  ],
+  "follow_up_scheduled": [
+    {
+      "id": "followup-alert-1758249094523-5qe7gsl6c-1758249094535",
+      "type": "alert_followup",
+      "alert_id": "alert-1758249094523-5qe7gsl6c",
+      "scheduled_for": "2025-09-19T03:01:34.535Z",
+      "delay_minutes": 30,
+      "status": "scheduled"
+    },
+    {
+      "action": "immediate_check",
+      "scheduled_for": "2025-09-19T03:01:34.535Z",
+      "delay_description": "30 minutes",
+      "status": "scheduled"
+    },
+    {
+      "action": "escalation_check",
+      "scheduled_for": "2025-09-19T03:31:34.535Z",
+      "delay_description": "60 minutes",
+      "status": "scheduled"
+    },
+    {
+      "action": "management_alert",
+      "scheduled_for": "2025-09-19T04:31:34.535Z",
+      "delay_description": "120 minutes",
+      "status": "scheduled"
+    },
+    {
+      "action": "incident_review",
+      "scheduled_for": "2025-09-19T06:31:34.535Z",
+      "delay_description": "4 hours",
+      "status": "scheduled"
+    }
+  ],
+  "resolution_time": null,
+  "metadata": {
+    "created_by": "post-merge-monitoring",
+    "environment": "development",
+    "repository": "unknown"
+  }
+}
