@@ -3,6 +3,7 @@
  */
 
 import { render, screen } from '@testing-library/react'
+import '@testing-library/jest-dom'
 
 // Simple component for testing
 function TestComponent() {
