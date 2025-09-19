@@ -11,11 +11,15 @@ on:
         description: 'Error details'
         required: false
         default: 'Manual CodeGen trigger'
+  push:
+    branches: [ main, feature/*, develop ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   codegen-placeholder:
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event_name == 'pull_request'
     
     steps:
     - name: Checkout code
@@ -105,7 +109,7 @@ If this issue is not resolved within 1 hour, the system will automatically:
 
   check-pending-tasks:
     runs-on: ubuntu-latest
-    if: github.event_name == 'schedule'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     
     steps:
     - name: Checkout code

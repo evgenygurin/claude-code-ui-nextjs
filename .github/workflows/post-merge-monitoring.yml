@@ -34,7 +34,7 @@ jobs:
   post-merge-health-check:
     name: Post-Merge Health Assessment
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
+    if: always() # Run for all events to test the system
     
     outputs:
       health-status: ${{ steps.health-assessment.outputs.status }}
