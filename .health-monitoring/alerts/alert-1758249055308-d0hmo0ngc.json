@@ -1,0 +1,91 @@
+{
+  "id": "alert-1758249055308-d0hmo0ngc",
+  "timestamp": "2025-09-19T02:30:55.308Z",
+  "type": "new_critical_issues",
+  "priority": "high",
+  "description": "New critical issues detected: type_checking, tests, build",
+  "recommendedAction": "immediate_codegen_intervention",
+  "details": {
+    "newCriticalIssues": [
+      "type_checking",
+      "tests",
+      "build"
+    ],
+    "allNewIssues": [
+      "type_checking",
+      "tests",
+      "build"
+    ]
+  },
+  "context": {
+    "currentHealth": {
+      "timestamp": "2025-09-19T02:30:42.093Z",
+      "metrics": {
+        "linting": {
+          "type": "linting",
+          "status": "passed",
+          "critical": false,
+          "details": "Linting passed",
+          "executionTime": 1758249044497
+        },
+        "typeChecking": {
+          "type": "type_checking",
+          "status": "failed",
+          "critical": true,
+          "details": "",
+          "executionTime": 1758249046357
+        },
+        "tests": {
+          "type": "tests",
+          "status": "failed",
+          "critical": true,
+          "details": "sh: 1: jest: not found\n",
+          "executionTime": 1758249046621
+        },
+        "build": {
+          "type": "build",
+          "status": "failed",
+          "critical": true,
+          "details": "Failed to compile.\n\nType error: Cannot find type definition file for '@testing-library/jest-dom'.\n  The file is in the program because:\n    Entry point of type library '@testing-library/jest-dom' specified in compilerOptions\n\nNext.js build worker exited with code: 1 and signal: null\n",
+          "executionTime": 1758249054231
+        },
+        "security": {
+          "type": "security",
+          "status": "passed",
+          "critical": false,
+          "details": "Security audit passed",
+          "executionTime": 1758249055273
+        }
+      },
+      "overallScore": 40,
+      "status": "critical",
+      "issues": [
+        "type_checking",
+        "tests",
+        "build"
+      ]
+    },
+    "baseline": {
+      "score": 85,
+      "status": "warning",
+      "timestamp": "20250919",
+      "samplesCount": 1
+    },
+    "changes": {
+      "scoreChange": -45,
+      "statusChange": true,
+      "newIssues": [
+        "type_checking",
+        "tests",
+        "build"
+      ],
+      "resolvedIssues": [],
+      "severity": "critical"
+    },
+    "trends": {
+      "trend": "insufficient_data",
+      "confidence": "low"
+    }
+  },
+  "status": "open"
+}

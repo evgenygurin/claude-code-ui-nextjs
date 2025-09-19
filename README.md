@@ -22,7 +22,7 @@ Claude Code UI is a comprehensive web application that provides a beautiful, res
 
 ### Prerequisites
 
-- Node.js 20+ 
+- Node.js 20+
 - npm 10+
 - Claude Code CLI or Cursor CLI installed
 - Git
@@ -30,28 +30,33 @@ Claude Code UI is a comprehensive web application that provides a beautiful, res
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/your-org/claude-code-ui-nextjs.git
    cd claude-code-ui-nextjs
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Set up environment variables**
+
    ```bash
    cp .env.example .env
    # Edit .env with your configuration
    ```
 
 4. **Start development server**
+
    ```bash
    npm run dev
    ```
 
 5. **Open in browser**
+
    ```text
    http://localhost:3000
    ```
@@ -76,6 +81,7 @@ The application follows a modern, scalable architecture:
 ### Technology Stack
 
 #### Frontend
+
 - **Next.js 15** - React framework with App Router
 - **React 19** - Latest React with concurrent features
 - **TypeScript** - Type-safe development
@@ -84,6 +90,7 @@ The application follows a modern, scalable architecture:
 - **shadcn/ui** - High-quality React components
 
 #### Backend
+
 - **Next.js API Routes** - Serverless API endpoints
 - **Vercel Edge Functions** - Ultra-fast serverless functions
 - **WebSockets** - Real-time communication
@@ -91,6 +98,7 @@ The application follows a modern, scalable architecture:
 - **Prisma** - Database ORM
 
 #### Infrastructure
+
 - **Vercel** - Hosting and deployment
 - **PostgreSQL** - Primary database
 - **Vercel KV** - Redis-compatible caching
@@ -169,20 +177,24 @@ claude-code-ui-nextjs/
 ## 🔌 API Endpoints
 
 ### Chat Integration
+
 - `POST /api/claude` - Send messages to Claude AI
 - `POST /api/cursor` - Execute Cursor CLI commands
 
 ### Terminal
+
 - `POST /api/terminal` - Execute terminal commands
 - `GET /api/terminal` - List terminal sessions
 - `DELETE /api/terminal` - Close terminal session
 
 ### File Management
+
 - `GET /api/files` - List directory contents
 - `POST /api/files` - Create/write files
 - `DELETE /api/files` - Delete files
 
 ### WebSocket
+
 - `WS /api/ws` - Real-time communication
 
 ## 🚀 Deployment

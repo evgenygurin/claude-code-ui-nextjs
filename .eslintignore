@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+.next/
+out/
+build/
+
+# Ignore directories that were removed
+components/
+lib/
+hooks/
+types/
+app/api/
+
+# Config files
+*.config.js
+*.config.ts
+next-env.d.ts
+
+# Build artifacts
+*.tsbuildinfo
+dist/
+.vercel/

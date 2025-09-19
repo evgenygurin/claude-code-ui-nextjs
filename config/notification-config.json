@@ -1,0 +1,242 @@
+{
+  "notification_settings": {
+    "enabled": true,
+    "channels": {
+      "github_issues": {
+        "enabled": true,
+        "priority_levels": ["critical", "high", "medium"],
+        "labels": {
+          "critical": ["critical", "post-merge", "health-monitoring", "urgent"],
+          "high": ["high", "post-merge", "health-monitoring", "attention-needed"],
+          "medium": ["medium", "post-merge", "health-monitoring", "improvement"],
+          "low": ["low", "post-merge", "health-monitoring", "routine"]
+        },
+        "templates": {
+          "critical": "post-merge-critical-issue",
+          "health_degradation": "post-merge-health-degradation",
+          "improvement": "post-merge-improvement",
+          "trend_alert": "post-merge-trend-alert"
+        }
+      },
+      "github_comments": {
+        "enabled": true,
+        "target_issues": true,
+        "target_prs": false,
+        "auto_close_on_resolution": true
+      },
+      "email": {
+        "enabled": false,
+        "smtp_config": {
+          "host": "smtp.example.com",
+          "port": 587,
+          "secure": false,
+          "auth": {
+            "user": "${SMTP_USER}",
+            "pass": "${SMTP_PASS}"
+          }
+        },
+        "recipients": {
+          "critical": ["team-lead@example.com", "devops@example.com"],
+          "high": ["team-lead@example.com"],
+          "medium": ["team@example.com"]
+        }
+      },
+      "slack": {
+        "enabled": false,
+        "webhook_url": "${SLACK_WEBHOOK_URL}",
+        "channels": {
+          "critical": "#alerts-critical",
+          "high": "#alerts-high",
+          "medium": "#dev-notifications",
+          "low": "#dev-updates"
+        }
+      }
+    }
+  },
+  "escalation_rules": {
+    "enabled": true,
+    "levels": [
+      {
+        "name": "immediate",
+        "trigger_conditions": [
+          "error_type contains 'critical'",
+          "error_type contains 'new_critical_issues'",
+          "health_score < 50"
+        ],
+        "actions": [
+          "create_github_issue",
+          "trigger_codegen_immediate",
+          "schedule_followup_30min"
+        ],
+        "priority": "critical",
+        "timeout_minutes": 30
+      },
+      {
+        "name": "urgent",
+        "trigger_conditions": [
+          "error_type contains 'significant'",
+          "error_type contains 'degradation'",
+          "health_score < 70"
+        ],
+        "actions": [
+          "create_github_issue",
+          "trigger_codegen_scheduled",
+          "schedule_followup_2hours"
+        ],
+        "priority": "high",
+        "timeout_minutes": 120
+      },
+      {
+        "name": "standard",
+        "trigger_conditions": [
+          "error_type contains 'trend'",
+          "error_type contains 'warning'",
+          "health_score < 90"
+        ],
+        "actions": [
+          "create_github_issue",
+          "schedule_health_monitoring",
+          "schedule_followup_6hours"
+        ],
+        "priority": "medium",
+        "timeout_minutes": 360
+      },
+      {
+        "name": "informational",
+        "trigger_conditions": [
+          "improvement",
+          "health_score >= 90"
+        ],
+        "actions": [
+          "create_github_comment",
+          "update_baselines",
+          "document_success"
+        ],
+        "priority": "low",
+        "timeout_minutes": 1440
+      }
+    ]
+  },
+  "health_thresholds": {
+    "critical": {
+      "score_max": 50,
+      "immediate_intervention": true,
+      "escalation_time_minutes": 30,
+      "max_retry_attempts": 5,
+      "continuous_monitoring_interval": "15m"
+    },
+    "degraded": {
+      "score_max": 70,
+      "immediate_intervention": false,
+      "escalation_time_minutes": 120,
+      "max_retry_attempts": 3,
+      "continuous_monitoring_interval": "1h"
+    },
+    "warning": {
+      "score_max": 90,
+      "immediate_intervention": false,
+      "escalation_time_minutes": 360,
+      "max_retry_attempts": 2,
+      "continuous_monitoring_interval": "6h"
+    },
+    "healthy": {
+      "score_min": 90,
+      "celebration_enabled": true,
+      "baseline_update": true,
+      "continuous_monitoring_interval": "24h"
+    }
+  },
+  "follow_up_schedule": {
+    "critical_issues": [
+      { "delay_minutes": 30, "action": "immediate_check" },
+      { "delay_minutes": 60, "action": "escalation_check" },
+      { "delay_minutes": 120, "action": "management_alert" },
+      { "delay_hours": 4, "action": "incident_review" }
+    ],
+    "degraded_health": [
+      { "delay_hours": 2, "action": "progress_check" },
+      { "delay_hours": 6, "action": "intervention_review" },
+      { "delay_hours": 24, "action": "resolution_verification" }
+    ],
+    "improvements": [
+      { "delay_hours": 1, "action": "stability_check" },
+      { "delay_hours": 24, "action": "baseline_update" },
+      { "delay_hours": 72, "action": "trend_verification" }
+    ]
+  },
+  "integration_settings": {
+    "codegen": {
+      "enabled": true,
+      "api_endpoint": "${CODEGEN_API_ENDPOINT}",
+      "webhook_endpoint": "${CODEGEN_WEBHOOK_ENDPOINT}",
+      "authentication": {
+        "type": "bearer_token",
+        "token": "${CODEGEN_API_TOKEN}"
+      },
+      "timeout_seconds": 300,
+      "retry_attempts": 3
+    },
+    "github": {
+      "enabled": true,
+      "token": "${GITHUB_TOKEN}",
+      "repository": "${GITHUB_REPOSITORY}",
+      "api_base_url": "https://api.github.com"
+    },
+    "monitoring_tools": {
+      "sentry": {
+        "enabled": true,
+        "dsn": "${SENTRY_DSN}",
+        "environment": "${SENTRY_ENVIRONMENT}"
+      },
+      "datadog": {
+        "enabled": false,
+        "api_key": "${DATADOG_API_KEY}",
+        "app_key": "${DATADOG_APP_KEY}"
+      }
+    }
+  },
+  "reporting": {
+    "daily_summary": {
+      "enabled": true,
+      "schedule": "0 9 * * *",
+      "recipients": ["team@example.com"],
+      "include_trends": true,
+      "include_metrics": true
+    },
+    "weekly_report": {
+      "enabled": true,
+      "schedule": "0 9 * * 1",
+      "recipients": ["management@example.com"],
+      "include_incidents": true,
+      "include_improvements": true,
+      "include_recommendations": true
+    },
+    "incident_reports": {
+      "auto_generate": true,
+      "template": "incident-report-template.md",
+      "include_timeline": true,
+      "include_resolution_steps": true,
+      "retention_days": 90
+    }
+  },
+  "maintenance": {
+    "cleanup_schedule": {
+      "old_reports": "0 2 * * *",
+      "old_tasks": "0 3 * * *",
+      "old_alerts": "0 4 * * *"
+    },
+    "retention_periods": {
+      "health_reports_days": 30,
+      "task_files_days": 7,
+      "alert_files_days": 14,
+      "trend_data_days": 90
+    },
+    "backup": {
+      "enabled": true,
+      "schedule": "0 1 * * *",
+      "storage_path": ".health-monitoring/backups",
+      "retention_days": 30,
+      "compress": true
+    }
+  }
+}

@@ -2,21 +2,16 @@
   "framework": "nextjs",
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
-  "installCommand": "npm install",
+  "installCommand": "npm ci",
+  "outputDirectory": ".next",
   "functions": {
     "app/api/**/*.ts": {
-      "runtime": "@vercel/node"
+      "maxDuration": 30
     }
-  },
-  "env": {
-    "NEXTAUTH_URL": "@nextauth_url",
-    "NEXTAUTH_SECRET": "@nextauth_secret",
-    "CLAUDE_API_KEY": "@claude_api_key",
-    "CURSOR_API_KEY": "@cursor_api_key",
-    "DATABASE_URL": "@database_url"
   },
   "build": {
     "env": {
+      "NODE_ENV": "production",
       "NEXT_TELEMETRY_DISABLED": "1"
     }
   },
@@ -24,18 +19,10 @@
     {
       "source": "/api/(.*)",
       "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, PUT, DELETE, OPTIONS"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, Authorization"
-        }
+        { "key": "Access-Control-Allow-Credentials", "value": "true" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,POST,PUT,DELETE,OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization" }
       ]
     }
   ],
@@ -45,5 +32,6 @@
       "destination": "/api/ws"
     }
   ],
-  "regions": ["iad1"]
+  "regions": ["iad1"],
+  "public": false
 }

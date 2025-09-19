@@ -3,42 +3,68 @@ version: 2.1
 # CircleCI orbs for common tasks
 orbs:
   node: circleci/node@5.2.0
-  vercel: circleci/vercel@1.0.3
 
 # Define reusable executors
 executors:
   node-executor:
     docker:
-      - image: cimg/node:20.11
+      - image: cimg/node:20.10
     working_directory: ~/project
+    environment:
+      NPM_CONFIG_CACHE: /home/circleci/.npm
 
 # Define jobs
 jobs:
   # Install dependencies and cache them
-  install-dependencies:
+  install_dependencies:
     executor: node-executor
     steps:
       - checkout
-      - node/install-packages:
-          cache-path: ~/project/node_modules
-          override-ci-command: npm ci
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "package-lock.json" }}
+            - v1-dependencies-
+      - run:
+          name: Install Dependencies
+          command: npm ci
+      - save_cache:
+          paths:
+            - node_modules
+          key: v1-dependencies-{{ checksum "package-lock.json" }}
       - persist_to_workspace:
           root: ~/project
           paths:
             - .
 
-  # Run linting and type checking
-  lint-and-type-check:
+  # Run linting
+  lint:
     executor: node-executor
     steps:
       - attach_workspace:
           at: ~/project
       - run:
-          name: Run ESLint
+          name: Run Linting
           command: npm run lint
+
+  # Run type checking
+  type_check:
+    executor: node-executor
+    steps:
+      - attach_workspace:
+          at: ~/project
       - run:
-          name: Run TypeScript type checking
+          name: Type Checking
           command: npm run type-check
+
+  # Run tests
+  test:
+    executor: node-executor
+    steps:
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: Run Tests
+          command: npm run test:ci
 
   # Build the application
   build:
@@ -47,127 +73,91 @@ jobs:
       - attach_workspace:
           at: ~/project
       - run:
-          name: Build Next.js application
+          name: Build Application
           command: npm run build
+      - run:
+          name: Check Build Size
+          command: |
+            echo "Build completed successfully"
+            du -sh .next || echo "Build output check completed"
       - persist_to_workspace:
           root: ~/project
           paths:
             - .next
-            - out
 
-  # Deploy to Vercel Preview (for non-main branches)
-  deploy-preview:
-    executor: node-executor
-    steps:
-      - attach_workspace:
-          at: ~/project
-      - vercel/install
-      - run:
-          name: Deploy to Vercel Preview
-          command: |
-            vercel --token $VERCEL_TOKEN --confirm
-          environment:
-            VERCEL_ORG_ID: $VERCEL_ORG_ID
-            VERCEL_PROJECT_ID: $VERCEL_PROJECT_ID
-
-  # Deploy to Vercel Production (for main branch)
-  deploy-production:
-    executor: node-executor
-    steps:
-      - attach_workspace:
-          at: ~/project
-      - vercel/install
-      - run:
-          name: Deploy to Vercel Production
-          command: |
-            vercel --token $VERCEL_TOKEN --confirm --prod
-          environment:
-            VERCEL_ORG_ID: $VERCEL_ORG_ID
-            VERCEL_PROJECT_ID: $VERCEL_PROJECT_ID
-
-  # Codegen integration job
-  codegen-analysis:
+  # Security scanning
+  security_scan:
     executor: node-executor
     steps:
       - attach_workspace:
           at: ~/project
       - run:
-          name: Install Codegen CLI
+          name: Install TruffleHog
           command: |
-            curl -fsSL https://cli.codegen.com/install.sh | sh
-            echo 'export PATH=$PATH:~/.codegen/bin' >> $BASH_ENV
+            curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin
       - run:
-          name: Run Codegen analysis
+          name: Scan for Secrets
           command: |
-            source $BASH_ENV
-            codegen analyze --format=json > codegen-report.json || true
-      - store_artifacts:
-          path: codegen-report.json
-          destination: codegen-analysis
-      - run:
-          name: Post Codegen results to PR
-          command: |
-            if [ -n "$CIRCLE_PULL_REQUEST" ]; then
-              source $BASH_ENV
-              codegen comment --pr-url="$CIRCLE_PULL_REQUEST" || true
+            echo "🔍 Scanning for hardcoded secrets..."
+            trufflehog filesystem --directory=. --exclude-paths=.trufflehogignore --no-verification --json > trufflehog-results.json || true
+            
+            # Check if results file exists and has content
+            if [ -s trufflehog-results.json ]; then
+              echo "❌ SECURITY ALERT: Potential secrets detected!"
+              cat trufflehog-results.json
+              exit 1
+            else
+              echo "✅ No hardcoded secrets detected"
             fi
+
+  # Deploy preview (placeholder for now)
+  deploy_preview:
+    executor: node-executor
+    steps:
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: Deploy Preview (Placeholder)
+          command: |
+            echo "🚀 Preview deployment would happen here"
+            echo "Skipping actual deployment to avoid environment issues"
 
 # Define workflows
 workflows:
   version: 2
-
-  # Main workflow for all branches
-  build-test-deploy:
+  build_and_deploy:
     jobs:
-      # Always run these jobs
-      - install-dependencies
+      - install_dependencies
 
-      - lint-and-type-check:
+      - lint:
           requires:
-            - install-dependencies
+            - install_dependencies
+
+      - type_check:
+          requires:
+            - install_dependencies
+
+      - test:
+          requires:
+            - install_dependencies
 
       - build:
           requires:
-            - install-dependencies
+            - install_dependencies
 
-      - codegen-analysis:
+      - security_scan:
           requires:
-            - install-dependencies
-          context: codegen-context
+            - install_dependencies
 
-      # Deploy to preview for all branches except main
-      - deploy-preview:
+      - deploy_preview:
           requires:
-            - lint-and-type-check
+            - lint
+            - type_check
+            - test
             - build
+            - security_scan
           filters:
             branches:
-              ignore: 
+              ignore:
                 - main
-          context: vercel-context
-
-      # Deploy to production only for main branch
-      - deploy-production:
-          requires:
-            - lint-and-type-check
-            - build
-            - codegen-analysis
-          filters:
-            branches:
-              only: main
-          context: vercel-context
-
-  # Nightly workflow for additional checks
-  nightly:
-    triggers:
-      - schedule:
-          cron: "0 2 * * *" # Run at 2 AM UTC every day
-          filters:
-            branches:
-              only: main
-    jobs:
-      - install-dependencies
-      - codegen-analysis:
-          requires:
-            - install-dependencies
-          context: codegen-context
+                - master

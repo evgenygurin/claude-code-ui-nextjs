@@ -1,0 +1,55 @@
+{
+  "timestamp": "2025-09-19T02:31:34.550Z",
+  "summary": {
+    "total": 6,
+    "passed": 5,
+    "failed": 1,
+    "success_rate": "83%"
+  },
+  "results": [
+    {
+      "testSuite": "testTaskScheduler",
+      "result": "PASSED",
+      "details": "All tests in suite passed",
+      "timestamp": "2025-09-19T02:31:08.847Z"
+    },
+    {
+      "testSuite": "testHealthChangeDetector",
+      "result": "PASSED",
+      "details": "All tests in suite passed",
+      "timestamp": "2025-09-19T02:31:34.480Z"
+    },
+    {
+      "testSuite": "testNotificationManager",
+      "result": "PASSED",
+      "details": "All tests in suite passed",
+      "timestamp": "2025-09-19T02:31:34.498Z"
+    },
+    {
+      "testSuite": "testCodeGenErrorHandler",
+      "result": "PASSED",
+      "details": "All tests in suite passed",
+      "timestamp": "2025-09-19T02:31:34.521Z"
+    },
+    {
+      "testSuite": "testWorkflowIntegration",
+      "result": "PASSED",
+      "details": "All tests in suite passed",
+      "timestamp": "2025-09-19T02:31:34.522Z"
+    },
+    {
+      "testSuite": "testEndToEndScenarios",
+      "result": "FAILED",
+      "details": "Assertion failed: Should trigger low priority for improvements",
+      "timestamp": "2025-09-19T02:31:34.549Z"
+    }
+  ],
+  "recommendations": [
+    "❌ Fix failing tests before deploying to production",
+    "🧪 Run tests again after fixes are applied",
+    "🔍 Review error logs for detailed failure information",
+    "📚 Update documentation with test results",
+    "🔧 Consider adding more edge case tests",
+    "🚀 Plan gradual rollout with monitoring"
+  ]
+}
