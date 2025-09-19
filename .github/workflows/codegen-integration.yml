@@ -135,7 +135,7 @@ If this issue is not resolved within 1 hour, the system will automatically:
   notify-codegen:
     runs-on: ubuntu-latest
     if: always()
-    needs: [handle-ci-failure, check-pending-tasks]
+    needs: [codegen-placeholder, check-pending-tasks]
     
     steps:
     - name: Notify CodeGen Service
@@ -145,7 +145,7 @@ If this issue is not resolved within 1 hour, the system will automatically:
         # In a real implementation, this would call the CodeGen API
         # to notify about the workflow status and any pending tasks
         
-        echo "Workflow Status: ${{ needs.handle-ci-failure.result }}"
+        echo "Workflow Status: ${{ needs.codegen-placeholder.result }}"
         echo "Task Check Status: ${{ needs.check-pending-tasks.result }}"
         echo "Repository: ${{ github.repository }}"
         echo "Branch: ${{ github.ref_name }}"
