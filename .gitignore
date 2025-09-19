@@ -49,3 +49,7 @@ Thumbs.db
 /lib
 /hooks
 /types
+
+# CodeGen automation directories
+.codegen-tasks/
+.codegen-reports/

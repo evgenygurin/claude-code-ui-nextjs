@@ -141,8 +141,11 @@ Please use your standard development workflow: analyze → fix → test → revi
 
   async scheduleFollowUpTask(errorReport) {
     const followUpTask = {
-      scheduledTime: new Date(Date.now() + 60 * 60 * 1000), // 1 hour from now
-      taskType: 'followup',
+      id: `followup-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      scheduledFor: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hour from now
+      type: 'followup',
+      status: 'scheduled',
       originalError: errorReport,
       instructions: `
         Check if the CI/CD issues have been resolved after 1 hour.
@@ -161,11 +164,11 @@ Please use your standard development workflow: analyze → fix → test → revi
       fs.mkdirSync(tasksDir, { recursive: true });
     }
 
-    const taskFile = path.join(tasksDir, `followup-${Date.now()}.json`);
+    const taskFile = path.join(tasksDir, `${followUpTask.id}.json`);
     fs.writeFileSync(taskFile, JSON.stringify(followUpTask, null, 2));
     
     console.log(`⏰ Follow-up task scheduled: ${taskFile}`);
-    console.log(`📅 Will check again at: ${followUpTask.scheduledTime.toISOString()}`);
+    console.log(`📅 Will check again at: ${followUpTask.scheduledFor}`);
   }
 }
 
