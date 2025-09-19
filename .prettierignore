@@ -1,0 +1,12 @@
+node_modules
+.next
+dist
+build
+.env.local
+.env.production
+.env
+
+# Ignore workflow files due to YAML parsing issues
+.github/workflows/*.yml
+.github/workflows/*.yaml
+.circleci/config.yml
