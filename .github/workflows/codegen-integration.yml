@@ -1,0 +1,157 @@
+name: CodeGen Integration
+
+on:
+  workflow_dispatch:
+    inputs:
+      error_type:
+        description: 'Type of error to handle'
+        required: true
+        default: 'manual_trigger'
+      error_details:
+        description: 'Error details'
+        required: false
+        default: 'Manual CodeGen trigger'
+
+jobs:
+  codegen-placeholder:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: CodeGen Handler (Manual Trigger)
+      run: |
+        echo "🤖 CodeGen manual trigger activated"
+        echo "Error Type: ${{ github.event.inputs.error_type }}"
+        echo "Error Details: ${{ github.event.inputs.error_details }}"
+        echo "This workflow can be used to manually trigger CodeGen analysis"
+        
+        ERROR_TYPE="${{ github.event.inputs.error_type || 'ci_failure' }}"
+        ERROR_DETAILS="${{ github.event.inputs.error_details || 'CI/CD pipeline failure detected' }}"
+        
+        # Run the error handler script (this won't fail the build)
+        node scripts/codegen-error-handler.js "$ERROR_TYPE" "$ERROR_DETAILS" || echo "Handler completed"
+        
+    - name: Create GitHub Issue for CodeGen
+      if: failure() || github.event.workflow_run.conclusion == 'failure'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const errorType = '${{ github.event.inputs.error_type || "ci_failure" }}';
+          const errorDetails = '${{ github.event.inputs.error_details || "CI/CD pipeline failure" }}';
+          const runUrl = '${{ github.event.workflow_run.html_url || github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
+          
+          const issueBody = `🚨 **Automated CI/CD Failure Report**
+
+**Error Type:** ${errorType}
+**Error Details:** ${errorDetails}
+**Workflow Run:** [${runUrl}](${runUrl})
+**Branch:** ${{ github.ref_name }}
+**Commit:** ${{ github.sha }}
+**Timestamp:** ${new Date().toISOString()}
+
+---
+
+@codegen Please analyze this CI/CD failure and implement fixes:
+
+## Required Actions:
+1. 🔍 **Analyze the root cause** of the failure
+2. 🛠️ **Implement specific fixes** for the identified issues
+3. 🧪 **Create/update comprehensive tests** to prevent regression
+4. 📋 **Review and improve CI/CD configuration** if needed
+5. 🔄 **Run the full development cycle** (lint → test → build → deploy)
+6. 📝 **Create/update PR** with all improvements
+7. ⏰ **Schedule follow-up check** in 1 hour if issues persist
+
+## Context:
+- Project: \`${{ github.repository }}\`
+- Node.js version: 20.x
+- Framework: Next.js 15
+- CI/CD: CircleCI + GitHub Actions
+- Error handling: Automated CodeGen integration
+
+## Follow-up Instructions:
+If this issue is not resolved within 1 hour, the system will automatically:
+- Re-analyze remaining problems
+- Apply additional fixes
+- Re-run the complete CI/CD pipeline
+- Continue until the PR is fully ready for merge
+
+**This is an automated issue created by the CI/CD error handling system.**`;
+
+          await github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: `🚨 CI/CD Failure: ${errorType} - ${new Date().toISOString().split('T')[0]}`,
+            body: issueBody,
+            labels: ['ci/cd', 'automated', 'codegen', 'bug', 'priority-high']
+          });
+
+  check-pending-tasks:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Check Pending CodeGen Tasks
+      run: |
+        echo "⏰ Checking for pending CodeGen tasks..."
+        node scripts/task-scheduler.js check
+
+    - name: Schedule New Task if Needed
+      run: |
+        echo "📋 Scheduling follow-up tasks if needed..."
+        # Schedule a follow-up task for this workflow
+        node scripts/task-scheduler.js schedule
+        echo "Follow-up task scheduled successfully"
+
+    - name: Cleanup Old Tasks
+      run: |
+        echo "🧹 Cleaning up old completed tasks..."
+        node scripts/task-scheduler.js cleanup
+
+  notify-codegen:
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [handle-ci-failure, check-pending-tasks]
+    
+    steps:
+    - name: Notify CodeGen Service
+      run: |
+        echo "📡 Notifying CodeGen service about workflow completion..."
+        
+        # In a real implementation, this would call the CodeGen API
+        # to notify about the workflow status and any pending tasks
+        
+        echo "Workflow Status: ${{ needs.handle-ci-failure.result }}"
+        echo "Task Check Status: ${{ needs.check-pending-tasks.result }}"
+        echo "Repository: ${{ github.repository }}"
+        echo "Branch: ${{ github.ref_name }}"
+        echo "Commit: ${{ github.sha }}"
+        
+        # This could trigger a webhook, API call, or create a GitHub comment
+        # to notify CodeGen about the current status
+        
+        echo "✅ CodeGen notification completed"
