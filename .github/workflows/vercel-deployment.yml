@@ -58,30 +58,56 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check Codegen credentials
+        id: check_codegen
+        run: |
+          if [[ -z "${{ secrets.CODEGEN_API_KEY }}" ]]; then
+            echo "codegen_configured=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Codegen analysis skipped: Missing CODEGEN_API_KEY secret"
+          else
+            echo "codegen_configured=true" >> $GITHUB_OUTPUT
+            echo "✅ Codegen API key found, proceeding with analysis"
+          fi
+
       - name: Install Codegen CLI
+        if: steps.check_codegen.outputs.codegen_configured == 'true'
         run: |
           curl -fsSL https://cli.codegen.com/install.sh | sh
           echo "$HOME/.codegen/bin" >> $GITHUB_PATH
 
       - name: Run Codegen analysis
+        if: steps.check_codegen.outputs.codegen_configured == 'true'
         run: |
           codegen analyze --format=json > codegen-report.json || true
         env:
           CODEGEN_API_KEY: ${{ secrets.CODEGEN_API_KEY }}
 
       - name: Upload Codegen report
+        if: steps.check_codegen.outputs.codegen_configured == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: codegen-analysis
           path: codegen-report.json
 
       - name: Comment PR with Codegen results
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && steps.check_codegen.outputs.codegen_configured == 'true'
         run: |
           codegen comment --pr-url="${{ github.event.pull_request.html_url }}" || true
         env:
           CODEGEN_API_KEY: ${{ secrets.CODEGEN_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Comment PR with Codegen skip notice
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request' && steps.check_codegen.outputs.codegen_configured == 'false'
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '⚠️ **Codegen analysis skipped**\n\nTo enable Codegen code analysis, please configure the `CODEGEN_API_KEY` repository secret.\n\nSee the [Codegen documentation](https://docs.codegen.com) for setup instructions.'
+            });
 
   # Preview deployment job
   deploy-preview:
@@ -94,16 +120,31 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Check Vercel credentials
+        id: check_vercel
+        run: |
+          if [[ -z "${{ secrets.VERCEL_TOKEN }}" || -z "${{ secrets.VERCEL_ORG_ID }}" || -z "${{ secrets.VERCEL_PROJECT_ID }}" ]]; then
+            echo "vercel_configured=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Vercel deployment skipped: Missing required secrets (VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID)"
+          else
+            echo "vercel_configured=true" >> $GITHUB_OUTPUT
+            echo "✅ Vercel credentials found, proceeding with deployment"
+          fi
+
       - name: Install Vercel CLI
+        if: steps.check_vercel.outputs.vercel_configured == 'true'
         run: npm install --global vercel@latest
 
       - name: Pull Vercel Environment Information
+        if: steps.check_vercel.outputs.vercel_configured == 'true'
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build Project Artifacts
+        if: steps.check_vercel.outputs.vercel_configured == 'true'
         run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy Project Artifacts to Vercel
+        if: steps.check_vercel.outputs.vercel_configured == 'true'
         id: deploy
         run: |
           url=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
@@ -111,7 +152,7 @@ jobs:
 
       - name: Comment PR with preview URL
         uses: actions/github-script@v7
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && steps.check_vercel.outputs.vercel_configured == 'true'
         with:
           script: |
             github.rest.issues.createComment({
@@ -121,34 +162,61 @@ jobs:
               body: '🚀 **Preview deployment ready!**\n\n📱 **Preview URL**: ${{ steps.deploy.outputs.preview_url }}\n\n✨ This preview will be automatically updated when you push new commits.'
             });
 
+      - name: Comment PR with deployment skip notice
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request' && steps.check_vercel.outputs.vercel_configured == 'false'
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '⚠️ **Vercel preview deployment skipped**\n\nTo enable Vercel deployments, please configure the following repository secrets:\n- `VERCEL_TOKEN`\n- `VERCEL_ORG_ID`\n- `VERCEL_PROJECT_ID`\n\nSee the [deployment documentation](docs/deployment.md) for setup instructions.'
+            });
+
   # Production deployment job
   deploy-production:
     runs-on: ubuntu-latest
     name: Deploy Production
-    needs: [quality-checks, codegen-analysis]
+    needs: [quality-checks]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    # Skip codegen-analysis requirement if it's skipped (not a PR)
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Check Vercel credentials
+        id: check_vercel
+        run: |
+          if [[ -z "${{ secrets.VERCEL_TOKEN }}" || -z "${{ secrets.VERCEL_ORG_ID }}" || -z "${{ secrets.VERCEL_PROJECT_ID }}" ]]; then
+            echo "vercel_configured=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Production deployment skipped: Missing required secrets (VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID)"
+          else
+            echo "vercel_configured=true" >> $GITHUB_OUTPUT
+            echo "✅ Vercel credentials found, proceeding with production deployment"
+          fi
+
       - name: Install Vercel CLI
+        if: steps.check_vercel.outputs.vercel_configured == 'true'
         run: npm install --global vercel@latest
 
       - name: Pull Vercel Environment Information
+        if: steps.check_vercel.outputs.vercel_configured == 'true'
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build Project Artifacts
+        if: steps.check_vercel.outputs.vercel_configured == 'true'
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy Project Artifacts to Vercel
+        if: steps.check_vercel.outputs.vercel_configured == 'true'
         id: deploy
         run: |
           url=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
           echo "production_url=$url" >> $GITHUB_OUTPUT
 
       - name: Create deployment summary
+        if: steps.check_vercel.outputs.vercel_configured == 'true'
         run: |
           echo "## 🚀 Production Deployment Successful!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY  
@@ -156,3 +224,15 @@ jobs:
           echo "**📝 Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "**👤 Deployed by**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
           echo "**🕒 Deployment time**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
+
+      - name: Create deployment skip summary
+        if: steps.check_vercel.outputs.vercel_configured == 'false'
+        run: |
+          echo "## ⚠️ Production Deployment Skipped" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY  
+          echo "**Reason**: Missing Vercel configuration secrets" >> $GITHUB_STEP_SUMMARY
+          echo "**Required secrets**: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID" >> $GITHUB_STEP_SUMMARY
+          echo "**📝 Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**👤 Triggered by**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "See the deployment documentation for setup instructions." >> $GITHUB_STEP_SUMMARY
