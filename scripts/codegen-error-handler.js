@@ -38,6 +38,25 @@ class CodeGenErrorHandler {
                     (process.env.GITHUB_SERVER_URL && process.env.GITHUB_REPOSITORY && process.env.GITHUB_RUN_ID
                       ? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
                       : 'unknown-url');
+
+    // Smart Sentry Monitor Integration
+    this.sentryIntegration = {
+      enabled: process.env.SENTRY_MONITORING_ENABLED !== 'false',
+      escalationManager: null,
+      activeEscalations: new Map()
+    };
+
+    // Initialize escalation manager if available
+    if (this.sentryIntegration.enabled) {
+      try {
+        const AlertEscalationManager = require('./alert-escalation-manager');
+        this.sentryIntegration.escalationManager = new AlertEscalationManager();
+        console.log('✅ Smart Sentry integration enabled');
+      } catch (error) {
+        console.warn('⚠️  Alert Escalation Manager not available, continuing without escalation');
+        this.sentryIntegration.enabled = false;
+      }
+    }
   }
 
   async handleError(errorType, errorDetails) {
@@ -53,17 +72,31 @@ class CodeGenErrorHandler {
       buildUrl: this.buildUrl,
       errorType,
       errorDetails,
-      context: await this.gatherContext()
+      context: await this.gatherContext(),
+      source: this.determineErrorSource(errorType)
     };
+
+    // Smart Sentry integration - assess priority and create escalation if needed
+    let escalationId = null;
+    if (this.sentryIntegration.enabled) {
+      const priority = this.assessErrorPriority(errorType, errorDetails);
+      
+      if (priority !== 'ignore') {
+        escalationId = await this.createSmartEscalation(errorReport, priority);
+        errorReport.escalationId = escalationId;
+      }
+    }
 
     // Save error report locally
     await this.saveErrorReport(errorReport);
     
-    // Trigger CodeGen analysis
+    // Trigger CodeGen analysis with enhanced context
     await this.triggerCodeGenAnalysis(errorReport);
     
-    // Create delayed task for follow-up
+    // Create delayed task for follow-up (with escalation awareness)
     await this.scheduleFollowUpTask(errorReport);
+    
+    return { errorReport, escalationId };
   }
 
   async gatherContext() {
@@ -279,6 +312,233 @@ Please treat this as a HIGH PRIORITY post-merge incident requiring immediate att
     
     console.log(`⏰ Follow-up task scheduled: ${taskFile}`);
     console.log(`📅 Will check again at: ${followUpTask.scheduledFor}`);
+  }
+
+  /**
+   * Determine error source (CI/CD, Sentry, Health Monitor, etc.)
+   */
+  determineErrorSource(errorType) {
+    if (errorType.includes('sentry_') || errorType.includes('escalation_')) {
+      return 'sentry_monitor';
+    } else if (errorType.includes('health_') || errorType.includes('post_merge')) {
+      return 'health_monitor';
+    } else if (errorType.includes('ci_') || errorType.includes('build_')) {
+      return 'ci_cd';
+    }
+    return 'unknown';
+  }
+
+  /**
+   * Assess error priority for Smart Sentry integration
+   */
+  assessErrorPriority(errorType, errorDetails) {
+    // Critical priority indicators
+    const criticalKeywords = [
+      'critical', 'fatal', 'production', 'database', 'auth', 'payment', 
+      'security', 'data loss', 'corruption', 'breach'
+    ];
+    
+    // High priority indicators
+    const highKeywords = [
+      'error', 'exception', 'failure', 'crash', 'timeout', 'memory',
+      'performance', 'api', 'service', 'unavailable'
+    ];
+    
+    const combinedText = `${errorType} ${errorDetails}`.toLowerCase();
+    
+    // Check for critical indicators
+    if (criticalKeywords.some(keyword => combinedText.includes(keyword))) {
+      return 'critical';
+    }
+    
+    // Check for high priority indicators
+    if (highKeywords.some(keyword => combinedText.includes(keyword))) {
+      return 'high';
+    }
+    
+    // Check error type patterns
+    if (errorType.includes('escalation_critical') || errorType.includes('sentry_critical')) {
+      return 'critical';
+    } else if (errorType.includes('escalation_high') || errorType.includes('sentry_high')) {
+      return 'high';
+    } else if (errorType.includes('escalation_medium') || errorType.includes('sentry_medium')) {
+      return 'medium';
+    } else if (errorType.includes('health_change_critical') || errorType.includes('post_merge')) {
+      return 'high';
+    }
+    
+    return 'medium'; // Default priority
+  }
+
+  /**
+   * Create smart escalation with enhanced context
+   */
+  async createSmartEscalation(errorReport, priority) {
+    if (!this.sentryIntegration.escalationManager) {
+      console.warn('⚠️  Escalation manager not available');
+      return null;
+    }
+
+    try {
+      const alertId = `codegen-${errorReport.timestamp}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      const escalationContext = {
+        errorType: errorReport.errorType,
+        source: errorReport.source,
+        project: errorReport.project,
+        branch: errorReport.branch,
+        commit: errorReport.commitSha,
+        buildUrl: errorReport.buildUrl,
+        codegenTriggered: true,
+        detailedContext: errorReport.context,
+        errorSnippet: errorReport.errorDetails.substring(0, 500), // First 500 chars
+        environment: process.env.NODE_ENV || 'production',
+        timestamp: errorReport.timestamp
+      };
+
+      const escalation = await this.sentryIntegration.escalationManager.createEscalation(
+        alertId, 
+        priority, 
+        escalationContext
+      );
+      
+      // Track this escalation
+      this.sentryIntegration.activeEscalations.set(escalation.id, {
+        errorReport,
+        escalation,
+        createdAt: new Date()
+      });
+      
+      console.log(`🚨 Created ${priority} escalation: ${escalation.id} for error: ${errorReport.errorType}`);
+      return escalation.id;
+      
+    } catch (error) {
+      console.error('❌ Failed to create smart escalation:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Resolve escalation when error is handled
+   */
+  async resolveEscalation(escalationId, resolution = 'resolved') {
+    if (!this.sentryIntegration.escalationManager || !escalationId) {
+      return false;
+    }
+
+    try {
+      await this.sentryIntegration.escalationManager.resolveEscalation(escalationId, resolution);
+      
+      // Remove from active tracking
+      this.sentryIntegration.activeEscalations.delete(escalationId);
+      
+      console.log(`✅ Resolved escalation: ${escalationId}`);
+      return true;
+      
+    } catch (error) {
+      console.error('❌ Failed to resolve escalation:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Check and update escalation status
+   */
+  async checkEscalationStatus(escalationId) {
+    if (!this.sentryIntegration.escalationManager || !escalationId) {
+      return null;
+    }
+
+    try {
+      const status = this.sentryIntegration.escalationManager.getEscalationStatus(escalationId);
+      return status;
+      
+    } catch (error) {
+      console.error('❌ Failed to check escalation status:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Handle success callback from CodeGen execution
+   */
+  async onCodeGenSuccess(errorReport) {
+    console.log('🎉 CodeGen execution successful');
+    
+    // Resolve any associated escalation
+    if (errorReport.escalationId) {
+      await this.resolveEscalation(errorReport.escalationId, 'codegen_resolved');
+    }
+    
+    // Update success metrics
+    this.updateSuccessMetrics(errorReport);
+  }
+
+  /**
+   * Handle failure callback from CodeGen execution
+   */
+  async onCodeGenFailure(errorReport, error) {
+    console.error('❌ CodeGen execution failed:', error);
+    
+    // Check if we should escalate further
+    if (errorReport.escalationId) {
+      const status = await this.checkEscalationStatus(errorReport.escalationId);
+      
+      // If escalation is still active and this is a repeated failure, 
+      // the escalation system will automatically handle it
+      console.log(`🔄 Escalation ${errorReport.escalationId} will continue based on policy`);
+    }
+    
+    // Update failure metrics
+    this.updateFailureMetrics(errorReport, error);
+  }
+
+  /**
+   * Update success metrics
+   */
+  updateSuccessMetrics(errorReport) {
+    // This could integrate with monitoring systems
+    const metrics = {
+      timestamp: new Date().toISOString(),
+      errorType: errorReport.errorType,
+      source: errorReport.source,
+      resolutionTime: new Date() - new Date(errorReport.timestamp),
+      success: true
+    };
+    
+    console.log('📈 Success metrics:', metrics);
+  }
+
+  /**
+   * Update failure metrics
+   */
+  updateFailureMetrics(errorReport, error) {
+    const metrics = {
+      timestamp: new Date().toISOString(),
+      errorType: errorReport.errorType,
+      source: errorReport.source,
+      failureReason: error.message,
+      success: false
+    };
+    
+    console.log('📉 Failure metrics:', metrics);
+  }
+
+  /**
+   * Get Smart Sentry integration status
+   */
+  getSentryIntegrationStatus() {
+    return {
+      enabled: this.sentryIntegration.enabled,
+      escalationManagerAvailable: this.sentryIntegration.escalationManager !== null,
+      activeEscalations: this.sentryIntegration.activeEscalations.size,
+      escalations: Array.from(this.sentryIntegration.activeEscalations.values()).map(e => ({
+        id: e.escalation.id,
+        priority: e.escalation.priority,
+        errorType: e.errorReport.errorType,
+        createdAt: e.createdAt.toISOString()
+      }))
+    };
   }
 }
 
