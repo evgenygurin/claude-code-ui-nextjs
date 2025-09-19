@@ -115,8 +115,8 @@ jobs:
           # Check coverage if available
           if [ -f "coverage/lcov-report/index.html" ]; then
             COVERAGE=$(grep -oE '[0-9]+\.[0-9]+%' coverage/lcov-report/index.html | head -1 | sed 's/%//' || echo "0")
-            # Use bash arithmetic instead of bc
-            if (( $(echo "$COVERAGE >= 80" | awk '{print ($1 >= $2)}') )); then
+            # Use awk for floating point comparison instead of bc
+            if [ $(echo "$COVERAGE" | awk '{print ($1 >= 80) ? 1 : 0}') -eq 1 ]; then
               echo "- ✅ Coverage: ${COVERAGE}% (Good)" >> health-report.md
             else
               echo "- ⚠️ Coverage: ${COVERAGE}% (Low)" >> health-report.md
@@ -150,11 +150,23 @@ jobs:
         
         # 4. Security Status
         echo "### 🛡️ Security" >> health-report.md
-        if command -v npm >/dev/null && npm audit --audit-level=moderate 2>/dev/null; then
-          echo "- ✅ Security audit: CLEAN" >> health-report.md
+        # Check if npm is available and run audit
+        if command -v npm >/dev/null; then
+          if npm audit --audit-level=moderate 2>/dev/null; then
+            echo "- ✅ Security audit: CLEAN" >> health-report.md
+          else
+            # Check if audit found vulnerabilities vs other errors  
+            if npm audit --audit-level=moderate --json 2>/dev/null | grep -q '"vulnerabilities"'; then
+              echo "- ⚠️ Security audit: VULNERABILITIES DETECTED" >> health-report.md
+              WARNINGS+=("security_vulnerabilities")
+              HEALTH_SCORE=$((HEALTH_SCORE - 15))
+            else
+              echo "- ℹ️ Security audit: Could not complete (may require network)" >> health-report.md
+              # Don't penalize for network/tool availability issues in CI environment
+            fi
+          fi
         else
-          echo "- ⚠️ Security audit: SKIPPED (npm audit failed or not available)" >> health-report.md
-          # Don't penalize for missing tools in CI environment
+          echo "- ⚠️ Security audit: SKIPPED (npm not available)" >> health-report.md
         fi
         
         # 5. Git Status Check
@@ -177,9 +189,14 @@ jobs:
         
         # Basic performance check (build time)
         BUILD_START=$(date +%s)
-        npm run build >/dev/null 2>&1
-        BUILD_END=$(date +%s)
-        BUILD_TIME=$((BUILD_END - BUILD_START))
+        if npm run build >/dev/null 2>&1; then
+          BUILD_END=$(date +%s)
+          BUILD_TIME=$((BUILD_END - BUILD_START))
+        else
+          BUILD_END=$(date +%s)
+          BUILD_TIME=$((BUILD_END - BUILD_START))
+          echo "- ⚠️ Performance build failed, timing may be inaccurate" >> health-report.md
+        fi
         
         echo "- ℹ️ Build time: ${BUILD_TIME}s" >> health-report.md
         
