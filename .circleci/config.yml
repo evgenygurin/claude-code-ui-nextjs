@@ -8,6 +8,9 @@ executors:
     docker:
       - image: cimg/node:20.10
     working_directory: ~/project
+    environment:
+      # Ensure npm cache is available
+      NPM_CONFIG_CACHE: /home/circleci/.npm
 
 jobs:
   install_dependencies:
@@ -37,7 +40,16 @@ jobs:
           at: ~/project
       - run:
           name: Run Linting
-          command: npm run lint
+          command: |
+            npm run lint || {
+              echo "❌ Linting failed - triggering CodeGen analysis"
+              node scripts/codegen-error-handler.js "lint_failure" "ESLint found issues in the codebase"
+              exit 1
+            }
+      - run:
+          name: Handle Lint Failure
+          command: node scripts/codegen-error-handler.js "lint_failure" "Linting pipeline failed"
+          when: on_fail
 
   type_check:
     executor: node-executor
@@ -46,7 +58,16 @@ jobs:
           at: ~/project
       - run:
           name: Type Checking
-          command: npm run type-check
+          command: |
+            npm run type-check || {
+              echo "❌ Type checking failed - triggering CodeGen analysis"
+              node scripts/codegen-error-handler.js "type_check_failure" "TypeScript compilation errors detected"
+              exit 1
+            }
+      - run:
+          name: Handle Type Check Failure
+          command: node scripts/codegen-error-handler.js "type_check_failure" "Type checking pipeline failed"
+          when: on_fail
 
   build:
     executor: node-executor
@@ -55,12 +76,21 @@ jobs:
           at: ~/project
       - run:
           name: Build Application
-          command: npm run build
+          command: |
+            npm run build || {
+              echo "❌ Build failed - triggering CodeGen analysis"
+              node scripts/codegen-error-handler.js "build_failure" "Next.js build process failed"
+              exit 1
+            }
       - run:
           name: Check Build Size
           command: |
             echo "Build completed successfully"
             du -sh .next || true
+      - run:
+          name: Handle Build Failure
+          command: node scripts/codegen-error-handler.js "build_failure" "Build pipeline failed"
+          when: on_fail
       - persist_to_workspace:
           root: ~/project
           paths:
@@ -121,10 +151,47 @@ jobs:
             if [ -s trufflehog-results.json ]; then
               echo "❌ SECURITY ALERT: Potential secrets detected!"
               cat trufflehog-results.json
+              echo "🤖 Triggering CodeGen for security remediation..."
+              node scripts/codegen-error-handler.js "security_scan_failure" "Hardcoded secrets or sensitive data detected in codebase"
               exit 1
             else
               echo "✅ No hardcoded secrets detected"
             fi
+      - run:
+          name: Handle Security Scan Failure
+          command: node scripts/codegen-error-handler.js "security_scan_failure" "Security scanning pipeline failed"
+          when: on_fail
+
+  test:
+    executor: node-executor
+    steps:
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: Install Test Dependencies
+          command: |
+            npm install --save-dev jest @types/jest @testing-library/react @testing-library/jest-dom jest-environment-jsdom
+      - run:
+          name: Generate Test Configuration
+          command: |
+            node scripts/codegen-error-handler.js "test_setup" "Setting up test environment and generating test configurations"
+      - run:
+          name: Run Tests
+          command: |
+            if [ -f "jest.config.js" ]; then
+              npm test || {
+                echo "❌ Tests failed - triggering CodeGen analysis"
+                node scripts/codegen-error-handler.js "test_failure" "Unit tests are failing"
+                exit 1
+              }
+            else
+              echo "⚠️  No tests configured yet - will be added by CodeGen"
+              node scripts/codegen-error-handler.js "no_tests" "Project lacks comprehensive test coverage"
+            fi
+      - run:
+          name: Handle Test Failure
+          command: node scripts/codegen-error-handler.js "test_failure" "Testing pipeline failed"
+          when: on_fail
 
   codegen_analysis:
     executor: node-executor
@@ -132,22 +199,41 @@ jobs:
       - attach_workspace:
           at: ~/project
       - run:
-          name: Install CodeGen CLI
+          name: Comprehensive CodeGen Analysis
           command: |
-            # Install CodeGen CLI tools
-            npm install -g @codegen/cli || echo "CodeGen CLI installation skipped"
+            echo "🤖 Running comprehensive CodeGen analysis..."
+            
+            # Generate project analysis report
+            node scripts/codegen-error-handler.js "analysis" "Performing comprehensive code analysis and improvement recommendations"
+            
+            # Check for pending follow-up tasks
+            if [ -d ".codegen-tasks" ]; then
+              echo "📋 Found pending CodeGen tasks:"
+              ls -la .codegen-tasks/
+              for task in .codegen-tasks/*.json; do
+                if [ -f "$task" ]; then
+                  echo "Processing task: $task"
+                  cat "$task"
+                fi
+              done
+            fi
+            
+            echo "✅ CodeGen analysis completed"
       - run:
-          name: Run CodeGen Analysis
+          name: Generate AI Improvements
           command: |
-            echo "Running CodeGen analysis..."
-            # Add CodeGen analysis commands here
-            echo "CodeGen analysis completed"
-      - run:
-          name: Generate AI Test Cases
-          command: |
-            echo "Generating AI-powered test cases..."
-            # Add AI test generation logic here
-            echo "AI test generation completed"
+            echo "🚀 Generating AI-powered improvements..."
+            
+            # This would trigger CodeGen to:
+            # 1. Analyze codebase quality
+            # 2. Generate comprehensive tests
+            # 3. Improve CI/CD configuration  
+            # 4. Add missing documentation
+            # 5. Optimize performance
+            
+            node scripts/codegen-error-handler.js "improvement_generation" "Generating AI-powered code improvements and optimizations"
+            
+            echo "🎯 AI improvements generated"
 
   sentry_release:
     executor: node-executor
@@ -186,15 +272,31 @@ workflows:
           requires:
             - install_dependencies
 
+      - test:
+          requires:
+            - install_dependencies
+
       - security_scan:
           requires:
             - install_dependencies
+
+      - codegen_analysis:
+          requires:
+            - install_dependencies
+          filters:
+            branches:
+              only:
+                - main
+                - master
+                - develop
+                - feature/*
 
       - deploy_preview:
           requires:
             - lint
             - type_check
             - build
+            - test
             - security_scan
           filters:
             branches:
@@ -207,7 +309,9 @@ workflows:
             - lint
             - type_check
             - build
+            - test
             - security_scan
+            - codegen_analysis
           filters:
             branches:
               only:
