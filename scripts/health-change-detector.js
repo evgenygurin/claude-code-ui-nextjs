@@ -17,57 +17,69 @@ class HealthChangeDetector {
     this.reportsDir = path.join(this.healthDir, 'reports');
     this.trendsDir = path.join(this.healthDir, 'trends');
     this.alertsDir = path.join(this.healthDir, 'alerts');
-    
+
     this.thresholds = {
       critical: {
-        scoreDropThreshold: 30,    // Trigger if health score drops by 30+ points
-        consecutiveFailures: 2,    // Trigger after 2 consecutive failures
-        timeWindowHours: 6         // Within 6 hours
+        scoreDropThreshold: 30, // Trigger if health score drops by 30+ points
+        consecutiveFailures: 2, // Trigger after 2 consecutive failures
+        timeWindowHours: 6, // Within 6 hours
       },
       degraded: {
-        scoreDropThreshold: 20,    // Trigger if health score drops by 20+ points
-        consecutiveFailures: 3,    // Trigger after 3 consecutive failures
-        timeWindowHours: 12        // Within 12 hours
+        scoreDropThreshold: 20, // Trigger if health score drops by 20+ points
+        consecutiveFailures: 3, // Trigger after 3 consecutive failures
+        timeWindowHours: 12, // Within 12 hours
       },
       improvement: {
-        scoreRiseThreshold: 15,    // Detect significant improvements
-        stabilityHours: 24         // Must be stable for 24 hours
-      }
+        scoreRiseThreshold: 15, // Detect significant improvements
+        stabilityHours: 24, // Must be stable for 24 hours
+      },
     };
-    
+
     this.ensureDirectories();
   }
 
   ensureDirectories() {
-    [this.healthDir, this.baselinesDir, this.reportsDir, this.trendsDir, this.alertsDir]
-      .forEach(dir => {
-        if (!fs.existsSync(dir)) {
-          fs.mkdirSync(dir, { recursive: true });
-        }
-      });
+    [
+      this.healthDir,
+      this.baselinesDir,
+      this.reportsDir,
+      this.trendsDir,
+      this.alertsDir,
+    ].forEach(dir => {
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+    });
   }
 
   async detectHealthChanges() {
     console.log('🔍 Analyzing health changes...');
-    
+
     const currentHealth = await this.getCurrentHealthStatus();
     const baseline = await this.getHealthBaseline();
     const recentHistory = await this.getRecentHealthHistory();
-    
+
     const changeAnalysis = {
       timestamp: new Date().toISOString(),
       current: currentHealth,
       baseline: baseline,
-      changes: await this.analyzeChanges(currentHealth, baseline, recentHistory),
+      changes: await this.analyzeChanges(
+        currentHealth,
+        baseline,
+        recentHistory
+      ),
       trends: await this.analyzeTrends(recentHistory),
-      recommendations: []
+      recommendations: [],
     };
 
     // Detect significant changes
-    const significantChanges = await this.identifySignificantChanges(changeAnalysis);
-    
+    const significantChanges =
+      await this.identifySignificantChanges(changeAnalysis);
+
     if (significantChanges.length > 0) {
-      console.log(`🚨 Detected ${significantChanges.length} significant health changes`);
+      console.log(
+        `🚨 Detected ${significantChanges.length} significant health changes`
+      );
       await this.handleSignificantChanges(significantChanges, changeAnalysis);
     } else {
       console.log('✅ No significant health changes detected');
@@ -75,19 +87,19 @@ class HealthChangeDetector {
 
     // Save analysis results
     await this.saveChangeAnalysis(changeAnalysis);
-    
+
     return changeAnalysis;
   }
 
   async getCurrentHealthStatus() {
     console.log('📊 Gathering current health metrics...');
-    
+
     const healthStatus = {
       timestamp: new Date().toISOString(),
       metrics: {},
       overallScore: 0,
       status: 'unknown',
-      issues: []
+      issues: [],
     };
 
     try {
@@ -113,16 +125,18 @@ class HealthChangeDetector {
         typeChecking: await this.checkTypeChecking(),
         tests: await this.checkTests(),
         build: await this.checkBuild(),
-        security: await this.checkSecurity()
+        security: await this.checkSecurity(),
       },
       overallScore: 0,
       status: 'unknown',
-      issues: []
+      issues: [],
     };
 
     // Calculate overall score
     const checks = Object.values(results.metrics);
-    const passedChecks = checks.filter(check => check.status === 'passed').length;
+    const passedChecks = checks.filter(
+      check => check.status === 'passed'
+    ).length;
     results.overallScore = Math.round((passedChecks / checks.length) * 100);
 
     // Determine overall status
@@ -143,77 +157,86 @@ class HealthChangeDetector {
   }
 
   async checkLinting() {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       exec('npm run lint', { timeout: 30000 }, (error, stdout, stderr) => {
         resolve({
           type: 'linting',
           status: error ? 'failed' : 'passed',
           critical: false,
           details: error ? stderr : 'Linting passed',
-          executionTime: Date.now()
+          executionTime: Date.now(),
         });
       });
     });
   }
 
   async checkTypeChecking() {
-    return new Promise((resolve) => {
-      exec('npm run type-check', { timeout: 60000 }, (error, stdout, stderr) => {
-        resolve({
-          type: 'type_checking',
-          status: error ? 'failed' : 'passed',
-          critical: true, // Type errors are critical
-          details: error ? stderr : 'Type checking passed',
-          executionTime: Date.now()
-        });
-      });
+    return new Promise(resolve => {
+      exec(
+        'npm run type-check',
+        { timeout: 60000 },
+        (error, stdout, stderr) => {
+          resolve({
+            type: 'type_checking',
+            status: error ? 'failed' : 'passed',
+            critical: true, // Type errors are critical
+            details: error ? stderr : 'Type checking passed',
+            executionTime: Date.now(),
+          });
+        }
+      );
     });
   }
 
   async checkTests() {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       exec('npm run test:ci', { timeout: 120000 }, (error, stdout, stderr) => {
         resolve({
           type: 'tests',
           status: error ? 'failed' : 'passed',
           critical: true, // Test failures are critical
           details: error ? stderr : 'Tests passed',
-          executionTime: Date.now()
+          executionTime: Date.now(),
         });
       });
     });
   }
 
   async checkBuild() {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       exec('npm run build', { timeout: 180000 }, (error, stdout, stderr) => {
         resolve({
           type: 'build',
           status: error ? 'failed' : 'passed',
           critical: true, // Build failures are critical
           details: error ? stderr : 'Build passed',
-          executionTime: Date.now()
+          executionTime: Date.now(),
         });
       });
     });
   }
 
   async checkSecurity() {
-    return new Promise((resolve) => {
-      exec('npm audit --audit-level=moderate', { timeout: 60000 }, (error, stdout, stderr) => {
-        resolve({
-          type: 'security',
-          status: error ? 'failed' : 'passed',
-          critical: false, // Security issues are important but not immediately critical
-          details: error ? stderr : 'Security audit passed',
-          executionTime: Date.now()
-        });
-      });
+    return new Promise(resolve => {
+      exec(
+        'npm audit --audit-level=moderate',
+        { timeout: 60000 },
+        (error, stdout, stderr) => {
+          resolve({
+            type: 'security',
+            status: error ? 'failed' : 'passed',
+            critical: false, // Security issues are important but not immediately critical
+            details: error ? stderr : 'Security audit passed',
+            executionTime: Date.now(),
+          });
+        }
+      );
     });
   }
 
   async getHealthBaseline() {
-    const baselineFiles = fs.readdirSync(this.baselinesDir)
+    const baselineFiles = fs
+      .readdirSync(this.baselinesDir)
       .filter(file => file.startsWith('health-score-') && file.endsWith('.txt'))
       .sort()
       .slice(-5); // Get last 5 baselines
@@ -228,23 +251,30 @@ class HealthChangeDetector {
 
     for (const file of baselineFiles) {
       try {
-        const score = parseInt(fs.readFileSync(path.join(this.baselinesDir, file), 'utf8'));
+        const score = parseInt(
+          fs.readFileSync(path.join(this.baselinesDir, file), 'utf8')
+        );
         if (!isNaN(score)) {
           totalScore += score;
           validFiles++;
         }
       } catch (error) {
-        console.warn(`⚠️  Could not read baseline file ${file}:`, error.message);
+        console.warn(
+          `⚠️  Could not read baseline file ${file}:`,
+          error.message
+        );
       }
     }
 
-    const averageScore = validFiles > 0 ? Math.round(totalScore / validFiles) : 100;
-    
+    const averageScore =
+      validFiles > 0 ? Math.round(totalScore / validFiles) : 100;
+
     return {
       score: averageScore,
       status: this.scoreToStatus(averageScore),
-      timestamp: baselineFiles[baselineFiles.length - 1]?.match(/(\d{8})/)?.[1] || null,
-      samplesCount: validFiles
+      timestamp:
+        baselineFiles[baselineFiles.length - 1]?.match(/(\d{8})/)?.[1] || null,
+      samplesCount: validFiles,
     };
   }
 
@@ -256,14 +286,15 @@ class HealthChangeDetector {
   }
 
   async getRecentHealthHistory(hours = 48) {
-    const cutoffTime = new Date(Date.now() - (hours * 60 * 60 * 1000));
+    const cutoffTime = new Date(Date.now() - hours * 60 * 60 * 1000);
     const history = [];
 
     if (!fs.existsSync(this.reportsDir)) {
       return history;
     }
 
-    const reportFiles = fs.readdirSync(this.reportsDir)
+    const reportFiles = fs
+      .readdirSync(this.reportsDir)
       .filter(file => file.endsWith('-health-report.md'))
       .map(file => {
         const stats = fs.statSync(path.join(this.reportsDir, file));
@@ -283,11 +314,14 @@ class HealthChangeDetector {
             timestamp: mtime.toISOString(),
             score: Math.floor(Math.random() * 40) + 60, // Simulated score for demo
             status: 'unknown', // Would be extracted from actual report
-            issues: [] // Would be extracted from actual report
+            issues: [], // Would be extracted from actual report
           });
         }
       } catch (error) {
-        console.warn(`⚠️  Could not process health report ${file}:`, error.message);
+        console.warn(
+          `⚠️  Could not process health report ${file}:`,
+          error.message
+        );
       }
     }
 
@@ -298,19 +332,31 @@ class HealthChangeDetector {
     const changes = {
       scoreChange: current.overallScore - baseline.score,
       statusChange: current.status !== baseline.status,
-      newIssues: current.issues.filter(issue => !baseline.issues?.includes(issue)),
-      resolvedIssues: baseline.issues?.filter(issue => !current.issues.includes(issue)) || [],
-      severity: 'none'
+      newIssues: current.issues.filter(
+        issue => !baseline.issues?.includes(issue)
+      ),
+      resolvedIssues:
+        baseline.issues?.filter(issue => !current.issues.includes(issue)) || [],
+      severity: 'none',
     };
 
     // Determine change severity
-    if (Math.abs(changes.scoreChange) >= this.thresholds.critical.scoreDropThreshold) {
+    if (
+      Math.abs(changes.scoreChange) >=
+      this.thresholds.critical.scoreDropThreshold
+    ) {
       changes.severity = 'critical';
-    } else if (Math.abs(changes.scoreChange) >= this.thresholds.degraded.scoreDropThreshold) {
+    } else if (
+      Math.abs(changes.scoreChange) >=
+      this.thresholds.degraded.scoreDropThreshold
+    ) {
       changes.severity = 'significant';
     } else if (Math.abs(changes.scoreChange) >= 10) {
       changes.severity = 'moderate';
-    } else if (changes.newIssues.length > 0 || changes.resolvedIssues.length > 0) {
+    } else if (
+      changes.newIssues.length > 0 ||
+      changes.resolvedIssues.length > 0
+    ) {
       changes.severity = 'minor';
     }
 
@@ -325,11 +371,15 @@ class HealthChangeDetector {
     const recent = history.slice(-3);
     const older = history.slice(0, -3);
 
-    const recentAvg = recent.reduce((sum, h) => sum + h.score, 0) / recent.length;
-    const olderAvg = older.length > 0 ? older.reduce((sum, h) => sum + h.score, 0) / older.length : recentAvg;
+    const recentAvg =
+      recent.reduce((sum, h) => sum + h.score, 0) / recent.length;
+    const olderAvg =
+      older.length > 0
+        ? older.reduce((sum, h) => sum + h.score, 0) / older.length
+        : recentAvg;
 
     const difference = recentAvg - olderAvg;
-    
+
     let trend = 'stable';
     let confidence = 'medium';
 
@@ -346,18 +396,20 @@ class HealthChangeDetector {
       confidence,
       recentAverage: Math.round(recentAvg),
       historicalAverage: Math.round(olderAvg),
-      change: Math.round(difference)
+      change: Math.round(difference),
     };
   }
 
   async identifySignificantChanges(analysis) {
     const significantChanges = [];
-    
+
     const { current, changes, trends } = analysis;
 
     // Critical health degradation
-    if (changes.scoreChange <= -this.thresholds.critical.scoreDropThreshold ||
-        (current.status === 'critical' && changes.statusChange)) {
+    if (
+      changes.scoreChange <= -this.thresholds.critical.scoreDropThreshold ||
+      (current.status === 'critical' && changes.statusChange)
+    ) {
       significantChanges.push({
         type: 'critical_degradation',
         priority: 'high',
@@ -366,14 +418,16 @@ class HealthChangeDetector {
         details: {
           currentScore: current.overallScore,
           previousScore: current.overallScore - changes.scoreChange,
-          issues: current.issues
-        }
+          issues: current.issues,
+        },
       });
     }
 
     // Significant degradation
-    else if (changes.scoreChange <= -this.thresholds.degraded.scoreDropThreshold ||
-             (current.status === 'degraded' && changes.statusChange)) {
+    else if (
+      changes.scoreChange <= -this.thresholds.degraded.scoreDropThreshold ||
+      (current.status === 'degraded' && changes.statusChange)
+    ) {
       significantChanges.push({
         type: 'significant_degradation',
         priority: 'medium',
@@ -382,16 +436,16 @@ class HealthChangeDetector {
         details: {
           currentScore: current.overallScore,
           previousScore: current.overallScore - changes.scoreChange,
-          issues: current.issues
-        }
+          issues: current.issues,
+        },
       });
     }
 
     // New critical issues
-    const criticalIssues = changes.newIssues.filter(issue => 
+    const criticalIssues = changes.newIssues.filter(issue =>
       ['build', 'type_checking', 'tests'].includes(issue)
     );
-    
+
     if (criticalIssues.length > 0) {
       significantChanges.push({
         type: 'new_critical_issues',
@@ -400,14 +454,16 @@ class HealthChangeDetector {
         recommendedAction: 'immediate_codegen_intervention',
         details: {
           newCriticalIssues: criticalIssues,
-          allNewIssues: changes.newIssues
-        }
+          allNewIssues: changes.newIssues,
+        },
       });
     }
 
     // Positive changes (improvements)
-    if (changes.scoreChange >= this.thresholds.improvement.scoreRiseThreshold ||
-        changes.resolvedIssues.length >= 2) {
+    if (
+      changes.scoreChange >= this.thresholds.improvement.scoreRiseThreshold ||
+      changes.resolvedIssues.length >= 2
+    ) {
       significantChanges.push({
         type: 'significant_improvement',
         priority: 'low',
@@ -416,8 +472,8 @@ class HealthChangeDetector {
         details: {
           currentScore: current.overallScore,
           previousScore: current.overallScore - changes.scoreChange,
-          resolvedIssues: changes.resolvedIssues
-        }
+          resolvedIssues: changes.resolvedIssues,
+        },
       });
     }
 
@@ -431,8 +487,8 @@ class HealthChangeDetector {
         details: {
           trendDirection: trends.trend,
           confidence: trends.confidence,
-          change: trends.change
-        }
+          change: trends.change,
+        },
       });
     }
 
@@ -440,26 +496,30 @@ class HealthChangeDetector {
   }
 
   async handleSignificantChanges(significantChanges, analysis) {
-    console.log(`🚨 Handling ${significantChanges.length} significant changes...`);
+    console.log(
+      `🚨 Handling ${significantChanges.length} significant changes...`
+    );
 
     for (const change of significantChanges) {
-      console.log(`📋 Processing change: ${change.type} (Priority: ${change.priority})`);
-      
+      console.log(
+        `📋 Processing change: ${change.type} (Priority: ${change.priority})`
+      );
+
       await this.createChangeAlert(change, analysis);
-      
+
       switch (change.recommendedAction) {
         case 'immediate_codegen_intervention':
           await this.triggerImmediateIntervention(change, analysis);
           break;
-          
+
         case 'scheduled_codegen_intervention':
           await this.scheduleIntervention(change, analysis);
           break;
-          
+
         case 'preventive_intervention':
           await this.schedulePreventiveIntervention(change, analysis);
           break;
-          
+
         case 'update_baseline_and_celebrate':
           await this.updateBaselineAndDocument(change, analysis);
           break;
@@ -480,27 +540,27 @@ class HealthChangeDetector {
         currentHealth: analysis.current,
         baseline: analysis.baseline,
         changes: analysis.changes,
-        trends: analysis.trends
+        trends: analysis.trends,
       },
-      status: 'open'
+      status: 'open',
     };
 
     const alertFile = path.join(this.alertsDir, `${alert.id}.json`);
     fs.writeFileSync(alertFile, JSON.stringify(alert, null, 2));
-    
+
     console.log(`🔔 Alert created: ${alertFile}`);
     return alert;
   }
 
   async triggerImmediateIntervention(change, analysis) {
     console.log('🚨 Triggering immediate CodeGen intervention...');
-    
+
     const CodeGenErrorHandler = require('./codegen-error-handler');
     const errorHandler = new CodeGenErrorHandler();
-    
+
     const errorType = `health_change_${change.type}`;
     const errorDetails = `${change.description}. Current health score: ${analysis.current.overallScore}/100. Issues: ${analysis.current.issues.join(', ')}`;
-    
+
     try {
       await errorHandler.handleError(errorType, errorDetails);
       console.log('✅ Immediate intervention triggered successfully');
@@ -511,18 +571,18 @@ class HealthChangeDetector {
 
   async scheduleIntervention(change, analysis) {
     console.log('⏰ Scheduling CodeGen intervention...');
-    
+
     const TaskScheduler = require('./task-scheduler');
     const scheduler = new TaskScheduler();
-    
+
     try {
       await scheduler.scheduleHealthMonitoring({
         status: analysis.current.status,
         score: analysis.current.overallScore,
         issues: analysis.current.issues.join(','),
-        interval: '2h' // More frequent monitoring for degraded health
+        interval: '2h', // More frequent monitoring for degraded health
       });
-      
+
       console.log('✅ Intervention scheduled successfully');
     } catch (error) {
       console.error('❌ Failed to schedule intervention:', error);
@@ -531,18 +591,18 @@ class HealthChangeDetector {
 
   async schedulePreventiveIntervention(change, analysis) {
     console.log('🛡️ Scheduling preventive intervention...');
-    
+
     const TaskScheduler = require('./task-scheduler');
     const scheduler = new TaskScheduler();
-    
+
     try {
       await scheduler.scheduleHealthMonitoring({
         status: 'warning', // Treat as warning for preventive action
         score: analysis.current.overallScore,
         issues: 'trending_degradation',
-        interval: '4h' // Regular monitoring for trend prevention
+        interval: '4h', // Regular monitoring for trend prevention
       });
-      
+
       console.log('✅ Preventive intervention scheduled successfully');
     } catch (error) {
       console.error('❌ Failed to schedule preventive intervention:', error);
@@ -551,43 +611,56 @@ class HealthChangeDetector {
 
   async updateBaselineAndDocument(change, analysis) {
     console.log('🎉 Updating baseline after improvement...');
-    
+
     // Update baseline
     const today = new Date().toISOString().split('T')[0].replace(/-/g, '');
-    const baselineFile = path.join(this.baselinesDir, `health-score-${today}.txt`);
+    const baselineFile = path.join(
+      this.baselinesDir,
+      `health-score-${today}.txt`
+    );
     fs.writeFileSync(baselineFile, analysis.current.overallScore.toString());
-    
+
     // Document the improvement
     const improvementReport = {
       timestamp: new Date().toISOString(),
       type: 'improvement_documented',
-      previousScore: analysis.current.overallScore - analysis.changes.scoreChange,
+      previousScore:
+        analysis.current.overallScore - analysis.changes.scoreChange,
       currentScore: analysis.current.overallScore,
       resolvedIssues: analysis.changes.resolvedIssues,
-      improvement: analysis.changes.scoreChange
+      improvement: analysis.changes.scoreChange,
     };
-    
-    const reportFile = path.join(this.reportsDir, `improvement-${Date.now()}.json`);
+
+    const reportFile = path.join(
+      this.reportsDir,
+      `improvement-${Date.now()}.json`
+    );
     fs.writeFileSync(reportFile, JSON.stringify(improvementReport, null, 2));
-    
-    console.log(`✅ Improvement documented and baseline updated: ${baselineFile}`);
+
+    console.log(
+      `✅ Improvement documented and baseline updated: ${baselineFile}`
+    );
   }
 
   async saveChangeAnalysis(analysis) {
-    const analysisFile = path.join(this.trendsDir, `change-analysis-${Date.now()}.json`);
+    const analysisFile = path.join(
+      this.trendsDir,
+      `change-analysis-${Date.now()}.json`
+    );
     fs.writeFileSync(analysisFile, JSON.stringify(analysis, null, 2));
     console.log(`📊 Change analysis saved: ${analysisFile}`);
   }
 
   async getChangeHistory(days = 7) {
-    const cutoffTime = new Date(Date.now() - (days * 24 * 60 * 60 * 1000));
+    const cutoffTime = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
     const history = [];
 
     if (!fs.existsSync(this.alertsDir)) {
       return history;
     }
 
-    const alertFiles = fs.readdirSync(this.alertsDir)
+    const alertFiles = fs
+      .readdirSync(this.alertsDir)
       .filter(file => file.endsWith('.json'))
       .map(file => {
         const filePath = path.join(this.alertsDir, file);
@@ -602,7 +675,10 @@ class HealthChangeDetector {
         const alert = JSON.parse(fs.readFileSync(filePath, 'utf8'));
         history.push(alert);
       } catch (error) {
-        console.warn(`⚠️  Could not read alert file ${filePath}:`, error.message);
+        console.warn(
+          `⚠️  Could not read alert file ${filePath}:`,
+          error.message
+        );
       }
     }
 
@@ -622,27 +698,31 @@ if (require.main === module) {
         console.log('\n📊 Health Change Detection Summary:');
         console.log(`Current Score: ${analysis.current.overallScore}/100`);
         console.log(`Baseline Score: ${analysis.baseline.score}/100`);
-        console.log(`Score Change: ${analysis.changes.scoreChange > 0 ? '+' : ''}${analysis.changes.scoreChange}`);
+        console.log(
+          `Score Change: ${analysis.changes.scoreChange > 0 ? '+' : ''}${analysis.changes.scoreChange}`
+        );
         console.log(`Status: ${analysis.current.status}`);
         if (analysis.current.issues.length > 0) {
           console.log(`Issues: ${analysis.current.issues.join(', ')}`);
         }
         break;
-        
+
       case 'history':
         const days = parseInt(process.argv[3]) || 7;
         const history = await detector.getChangeHistory(days);
         console.log(`\n📋 Health Change History (Last ${days} days):`);
         console.log(`Found ${history.length} significant changes`);
-        
+
         history.forEach((change, index) => {
-          console.log(`\n${index + 1}. ${change.type} (${change.priority} priority)`);
+          console.log(
+            `\n${index + 1}. ${change.type} (${change.priority} priority)`
+          );
           console.log(`   Time: ${change.timestamp}`);
           console.log(`   Description: ${change.description}`);
           console.log(`   Action: ${change.recommendedAction}`);
         });
         break;
-        
+
       case 'help':
       default:
         console.log(`

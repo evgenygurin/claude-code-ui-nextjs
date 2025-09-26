@@ -93,7 +93,7 @@ export default function Sidebar({
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 p-2">
-        {navigationItems.map((item) => (
+        {navigationItems.map(item => (
           <Button
             key={item.id}
             variant={activeView === item.id ? 'secondary' : 'ghost'}
@@ -125,7 +125,7 @@ export default function Sidebar({
 
       {/* Footer */}
       <div className="space-y-1 border-t border-border p-2">
-        {footerItems.map((item) => (
+        {footerItems.map(item => (
           <Button
             key={item.id}
             variant="ghost"

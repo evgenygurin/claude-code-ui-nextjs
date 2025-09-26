@@ -1,5 +1,5 @@
 // This file configures the initialization of Sentry on the server
-import * as Sentry from "@sentry/nextjs";
+import * as Sentry from '@sentry/nextjs';
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
@@ -16,9 +16,9 @@ Sentry.init({
   // CodeGen integration - set via initialScope
   initialScope: {
     tags: {
-      component: "claude-code-ui",
-      platform: "nextjs-server",
-      codegen: "enabled",
+      component: 'claude-code-ui',
+      platform: 'nextjs-server',
+      codegen: 'enabled',
     },
   },
 
@@ -30,8 +30,8 @@ Sentry.init({
   beforeSend(event) {
     // Add additional context for CodeGen
     if (event.tags) {
-      event.tags.runtime = "nodejs";
-      event.tags.framework = "nextjs";
+      event.tags.runtime = 'nodejs';
+      event.tags.framework = 'nextjs';
     }
 
     return event;

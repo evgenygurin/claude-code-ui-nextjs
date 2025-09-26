@@ -21,7 +21,8 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      content: "Hello! I'm Claude Code, your AI assistant. I can help you with coding tasks, file management, and various development workflows. What would you like to work on today?",
+      content:
+        "Hello! I'm Claude Code, your AI assistant. I can help you with coding tasks, file management, and various development workflows. What would you like to work on today?",
       role: 'assistant',
       timestamp: new Date(),
     },
@@ -65,16 +66,19 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
     setIsLoading(true);
 
     // Simulate AI response delay
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: simulateResponse(userMessage.content),
-        role: 'assistant',
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, assistantMessage]);
-      setIsLoading(false);
-    }, 1500 + Math.random() * 1000);
+    setTimeout(
+      () => {
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: simulateResponse(userMessage.content),
+          role: 'assistant',
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, assistantMessage]);
+        setIsLoading(false);
+      },
+      1500 + Math.random() * 1000
+    );
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -104,8 +108,10 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
   return (
     <div className={cn('flex h-full flex-col', className)}>
       {/* Header */}
-      <div className="border-b border-border bg-background/95 backdrop-blur px-6 py-4">
-        <h1 className="text-xl font-semibold text-foreground">Claude Code Chat</h1>
+      <div className="border-b border-border bg-background/95 px-6 py-4 backdrop-blur">
+        <h1 className="text-xl font-semibold text-foreground">
+          Claude Code Chat
+        </h1>
         <p className="text-sm text-muted-foreground">
           AI-powered assistant for coding and development tasks
         </p>
@@ -113,9 +119,9 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
 
       {/* Messages */}
       <div className="flex-1 overflow-hidden">
-        <div className="h-full overflow-y-auto custom-scrollbar px-6 py-4">
+        <div className="custom-scrollbar h-full overflow-y-auto px-6 py-4">
           <div className="space-y-6">
-            {messages.map((message) => (
+            {messages.map(message => (
               <div
                 key={message.id}
                 className={cn(
@@ -179,13 +185,13 @@ export default function ChatInterface({ className }: ChatInterfaceProps) {
       </div>
 
       {/* Input */}
-      <div className="border-t border-border bg-background/95 backdrop-blur p-4">
+      <div className="border-t border-border bg-background/95 p-4 backdrop-blur">
         <div className="flex gap-2">
           <div className="relative flex-1">
             <textarea
               ref={inputRef}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Type your message... (Ctrl+Enter to send)"
               className="w-full resize-none rounded-lg border border-input bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
