@@ -4,7 +4,8 @@ import Sidebar from '@/components/layout/sidebar';
 // Mock framer-motion
 jest.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    div: ({ children, initial, animate, transition, ...props }: any) => <div {...props}>{children}</div>,
+    span: ({ children, initial, animate, transition, exit, ...props }: any) => <span {...props}>{children}</span>,
   },
   AnimatePresence: ({ children }: any) => children,
 }));
@@ -37,7 +38,7 @@ describe('Sidebar', () => {
   it('should call onToggle when toggle button is clicked', () => {
     render(<Sidebar {...defaultProps} />);
     
-    const toggleButton = screen.getByRole('button', { name: /chevron/i });
+    const toggleButton = screen.getByRole('button', { name: /collapse sidebar/i });
     fireEvent.click(toggleButton);
     
     expect(defaultProps.onToggle).toHaveBeenCalledTimes(1);

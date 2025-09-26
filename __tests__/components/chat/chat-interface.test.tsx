@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import ChatInterface from '@/components/chat/chat-interface';
 
 // Mock react-markdown
@@ -19,10 +19,13 @@ describe('ChatInterface', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     jest.clearAllMocks();
+    // Mock Math.random to return 0 for consistent timing
+    jest.spyOn(Math, 'random').mockReturnValue(0);
   });
 
   afterEach(() => {
     jest.useRealTimers();
+    jest.restoreAllMocks();
   });
 
   it('should render with initial welcome message', () => {
@@ -89,15 +92,17 @@ describe('ChatInterface', () => {
     // Should show loading initially
     expect(screen.getByText('Claude is thinking...')).toBeInTheDocument();
     
-    // Fast-forward time to simulate response
-    jest.advanceTimersByTime(2500);
+    // Fast-forward time to simulate response (1500ms since Math.random returns 0)
+    await act(async () => {
+      jest.advanceTimersByTime(1500);
+    });
     
     await waitFor(() => {
       expect(screen.queryByText('Claude is thinking...')).not.toBeInTheDocument();
     });
     
     // Should show simulated response
-    expect(screen.getByText(/I understand you want to/)).toBeInTheDocument();
+    expect(screen.getByText(/I understand you want to.*Test command/)).toBeInTheDocument();
   });
 
   it('should copy message content', () => {
@@ -159,7 +164,7 @@ describe('ChatInterface', () => {
     expect(input).toHaveValue('');
     
     // Send button should show stop icon while loading
-    const stopIcon = screen.getByRole('button', { name: /square/i });
-    expect(stopIcon).toBeInTheDocument();
+    const stopButton = screen.getByRole('button', { name: /stop/i });
+    expect(stopButton).toBeInTheDocument();
   });
 });
