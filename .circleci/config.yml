@@ -82,15 +82,29 @@ jobs:
           name: Deploy to Vercel Preview
           no_output_timeout: 20m
           command: |
+            if [ -z "$VERCEL_TOKEN" ]; then
+              echo "⚠️ VERCEL_TOKEN not configured, skipping preview deployment"
+              echo "To enable preview deployments, add VERCEL_TOKEN to CircleCI environment variables"
+              exit 0
+            fi
+            
             if [ -n "${CIRCLE_PULL_REQUEST}" ]; then
               echo "🚀 Deploying preview for PR ${CIRCLE_PULL_REQUEST}"
               
               # Pull Vercel project configuration
-              vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
+              vercel pull --yes --environment=preview --token=$VERCEL_TOKEN || {
+                echo "❌ Failed to pull Vercel configuration"
+                echo "This might be due to missing project configuration or invalid token"
+                exit 0
+              }
               
               # Skip Vercel build since we already built in previous step
               # Use the prebuilt .next directory from workspace
-              vercel deploy --prebuilt --token=$VERCEL_TOKEN > deployment-url.txt
+              vercel deploy --prebuilt --token=$VERCEL_TOKEN > deployment-url.txt || {
+                echo "❌ Vercel deployment failed"
+                echo "Preview deployment is optional, continuing with CI/CD pipeline"
+                exit 0
+              }
               
               # Output the deployment URL
               echo "✅ Preview URL: $(cat deployment-url.txt)"
