@@ -12,14 +12,12 @@ on:
         required: false
         default: 'Manual CodeGen trigger'
   push:
-    branches: [ main, feature/*, develop ]
-  pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
 
 jobs:
   codegen-placeholder:
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event_name == 'pull_request'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     
     steps:
     - name: Checkout code
