@@ -116,7 +116,7 @@ jobs:
     name: Deploy Preview (Vercel)
     runs-on: ubuntu-latest
     needs: [lint-and-type-check, test, security-audit]
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && secrets.VERCEL_TOKEN != ''
     outputs:
       preview-url: ${{ steps.deploy.outputs.url }}
     steps:
@@ -210,7 +210,7 @@ jobs:
     name: Performance Audit
     runs-on: ubuntu-latest
     needs: [deploy-preview]
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && needs.deploy-preview.result == 'success'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -223,3 +223,25 @@ jobs:
           uploadArtifacts: true
           temporaryPublicStorage: true
           budgetPath: './lighthouse-budget.json'
+
+  deployment-fallback:
+    name: Deployment Status Check
+    runs-on: ubuntu-latest
+    needs: [lint-and-type-check, test, security-audit, build]
+    if: github.event_name == 'pull_request' && (secrets.VERCEL_TOKEN == '' || needs.deploy-preview.result == 'skipped')
+    steps:
+      - name: Deployment Skipped Notice
+        run: |
+          echo "⚠️  Vercel deployment was skipped"
+          echo "This can happen when VERCEL_TOKEN secret is not configured"
+          echo "All other CI/CD checks have completed successfully ✅"
+          echo ""
+          echo "If you need preview deployments:"
+          echo "1. Add VERCEL_TOKEN to GitHub repository secrets"
+          echo "2. Configure Vercel project settings"
+          echo ""
+          echo "Core pipeline status:"
+          echo "- Lint and Type Check: ✅ Passed"  
+          echo "- Tests: ✅ Passed"
+          echo "- Security Audit: ✅ Passed"
+          echo "- Build: ✅ Passed"
