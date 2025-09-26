@@ -6,16 +6,8 @@
   "description": "New critical issues detected: type_checking, tests, build",
   "recommendedAction": "immediate_codegen_intervention",
   "details": {
-    "newCriticalIssues": [
-      "type_checking",
-      "tests",
-      "build"
-    ],
-    "allNewIssues": [
-      "type_checking",
-      "tests",
-      "build"
-    ]
+    "newCriticalIssues": ["type_checking", "tests", "build"],
+    "allNewIssues": ["type_checking", "tests", "build"]
   },
   "context": {
     "currentHealth": {
@@ -59,11 +51,7 @@
       },
       "overallScore": 40,
       "status": "critical",
-      "issues": [
-        "type_checking",
-        "tests",
-        "build"
-      ]
+      "issues": ["type_checking", "tests", "build"]
     },
     "baseline": {
       "score": 85,
@@ -74,11 +62,7 @@
     "changes": {
       "scoreChange": -45,
       "statusChange": true,
-      "newIssues": [
-        "type_checking",
-        "tests",
-        "build"
-      ],
+      "newIssues": ["type_checking", "tests", "build"],
       "resolvedIssues": [],
       "severity": "critical"
     },

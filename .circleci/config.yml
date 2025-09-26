@@ -109,14 +109,14 @@ jobs:
           no_output_timeout: 20m
           command: |
             echo "🚀 Deploying to production"
-            
+
             # Pull Vercel project configuration
             vercel pull --yes --environment=production --token=$VERCEL_TOKEN
-            
+
             # Skip Vercel build since we already built in previous step
             # Use the prebuilt .next directory from workspace
             vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN > deployment-url.txt
-            
+
             # Output the deployment URL
             echo "✅ Production URL: $(cat deployment-url.txt)"
 
@@ -245,7 +245,7 @@ workflows:
   nightly:
     triggers:
       - schedule:
-          cron: "0 0 * * *"
+          cron: '0 0 * * *'
           filters:
             branches:
               only:
@@ -266,7 +266,7 @@ workflows:
   codegen_integration:
     triggers:
       - schedule:
-          cron: "0 6 * * 1"  # Weekly on Mondays
+          cron: '0 6 * * 1' # Weekly on Mondays
           filters:
             branches:
               only: main
