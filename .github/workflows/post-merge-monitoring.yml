@@ -3,8 +3,6 @@ name: Post-Merge Health Monitoring
 on:
   push:
     branches: [main, master]
-  pull_request:
-    branches: [main, master]
   schedule:
     # Check every 6 hours
     - cron: '0 */6 * * *'
@@ -34,7 +32,7 @@ jobs:
   post-merge-health-check:
     name: Post-Merge Health Assessment
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     
     outputs:
       health-status: ${{ steps.health-assessment.outputs.status }}
