@@ -7,7 +7,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { exec } = require('child_process');
+const { exec: _exec } = require('child_process');
 
 class MonitoringSystemTester {
   constructor() {
@@ -308,7 +308,7 @@ class MonitoringSystemTester {
     const HealthChangeDetector = require('./health-change-detector');
     const NotificationManager = require('./notification-manager');
     
-    const detector = new HealthChangeDetector();
+    const _detector = new HealthChangeDetector();
     const notificationManager = new NotificationManager();
 
     // Create mock critical health data
@@ -525,11 +525,12 @@ if (require.main === module) {
 
   async function main() {
     switch (command) {
-      case 'run-all':
+      case 'run-all': {
         const results = await tester.runAllTests();
         const passed = results.filter(r => r.result === 'PASSED').length;
         process.exit(passed === results.length ? 0 : 1);
         break;
+      }
         
       case 'cleanup':
         await tester.cleanup();

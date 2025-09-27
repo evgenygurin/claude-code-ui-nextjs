@@ -15,6 +15,15 @@ jest.mock('next/dynamic', () => () => {
   return DynamicComponent;
 });
 
+// Mock lucide-react icons
+jest.mock('lucide-react', () => ({
+  Send: () => <div data-testid="send-icon">Send</div>,
+  Square: () => <div data-testid="square-icon">Square</div>,
+  Copy: () => <div data-testid="copy-icon">Copy</div>,
+  User: () => <div data-testid="user-icon">User</div>,
+  Bot: () => <div data-testid="bot-icon">Bot</div>,
+}));
+
 describe('ChatInterface', () => {
   beforeEach(() => {
     jest.useFakeTimers();
@@ -96,8 +105,18 @@ describe('ChatInterface', () => {
       expect(screen.queryByText('Claude is thinking...')).not.toBeInTheDocument();
     });
     
-    // Should show simulated response
-    expect(screen.getByText(/I understand you want to/)).toBeInTheDocument();
+    // Should show simulated response (one of the possible responses)
+    const possibleResponses = [
+      /I understand you want to/,
+      /Great question about/,
+      /Thanks for asking about/,
+      /I see you're working on/
+    ];
+    
+    const responseFound = possibleResponses.some(regex => 
+      screen.queryByText(regex) !== null
+    );
+    expect(responseFound).toBe(true);
   });
 
   it('should copy message content', () => {
@@ -159,7 +178,7 @@ describe('ChatInterface', () => {
     expect(input).toHaveValue('');
     
     // Send button should show stop icon while loading
-    const stopIcon = screen.getByRole('button', { name: /square/i });
-    expect(stopIcon).toBeInTheDocument();
+    const stopButton = screen.getByRole('button', { name: /stop/i });
+    expect(stopButton).toBeInTheDocument();
   });
 });
