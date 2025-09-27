@@ -179,7 +179,7 @@ If this issue is not resolved within 1 hour, the system will automatically:
   notify-codegen:
     runs-on: ubuntu-latest
     if: always()
-    needs: [workflow-validation, pr-success, codegen-placeholder, check-pending-tasks]
+    needs: [workflow-validation]
     
     steps:
     - name: Notify CodeGen Service
