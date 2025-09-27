@@ -1,39 +1,39 @@
-import '@testing-library/jest-dom';
-import React from 'react';
+import '@testing-library/jest-dom'
+import React from 'react'
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
   constructor() {}
 
   observe() {
-    return null;
+    return null
   }
 
   disconnect() {
-    return null;
+    return null
   }
 
   unobserve() {
-    return null;
+    return null
   }
-};
+}
 
 // Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {
   constructor() {}
 
   observe() {
-    return null;
+    return null
   }
 
   disconnect() {
-    return null;
+    return null
   }
 
   unobserve() {
-    return null;
+    return null
   }
-};
+}
 
 // Mock matchMedia
 Object.defineProperty(window, 'matchMedia', {
@@ -48,7 +48,7 @@ Object.defineProperty(window, 'matchMedia', {
     removeEventListener: jest.fn(),
     dispatchEvent: jest.fn(),
   })),
-});
+})
 
 // Mock localStorage
 const localStorageMock = {
@@ -56,8 +56,8 @@ const localStorageMock = {
   setItem: jest.fn(),
   removeItem: jest.fn(),
   clear: jest.fn(),
-};
-global.localStorage = localStorageMock;
+}
+global.localStorage = localStorageMock
 
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
@@ -69,67 +69,37 @@ jest.mock('next/navigation', () => ({
       back: jest.fn(),
       forward: jest.fn(),
       refresh: jest.fn(),
-    };
+    }
   },
   useSearchParams() {
-    return new URLSearchParams();
+    return new URLSearchParams()
   },
   usePathname() {
-    return '/';
+    return '/'
   },
-}));
+}))
 
 // Mock DOM methods
-Element.prototype.scrollIntoView = jest.fn();
-HTMLElement.prototype.scrollIntoView = jest.fn();
+Element.prototype.scrollIntoView = jest.fn()
+HTMLElement.prototype.scrollIntoView = jest.fn()
 
 // Mock window.scrollTo
-global.scrollTo = jest.fn();
-
-// Mock framer-motion
-jest.mock('framer-motion', () => ({
-  motion: {
-    div: ({ children, ...props }) =>
-      React.createElement('div', props, children),
-    button: ({ children, ...props }) =>
-      React.createElement('button', props, children),
-    span: ({ children, ...props }) =>
-      React.createElement('span', props, children),
-    p: ({ children, ...props }) => React.createElement('p', props, children),
-    h1: ({ children, ...props }) => React.createElement('h1', props, children),
-    h2: ({ children, ...props }) => React.createElement('h2', props, children),
-    h3: ({ children, ...props }) => React.createElement('h3', props, children),
-    section: ({ children, ...props }) =>
-      React.createElement('section', props, children),
-    article: ({ children, ...props }) =>
-      React.createElement('article', props, children),
-    aside: ({ children, ...props }) =>
-      React.createElement('aside', props, children),
-    nav: ({ children, ...props }) =>
-      React.createElement('nav', props, children),
-  },
-  AnimatePresence: ({ children }) => children,
-  useAnimation: () => ({
-    start: jest.fn(),
-    stop: jest.fn(),
-    set: jest.fn(),
-  }),
-}));
+global.scrollTo = jest.fn()
 
 // Suppress console warnings in tests
-const originalError = console.error;
+const originalError = console.error
 beforeAll(() => {
   console.error = (...args) => {
     if (
       typeof args[0] === 'string' &&
       args[0].includes('Warning: ReactDOM.render is no longer supported')
     ) {
-      return;
+      return
     }
-    originalError.call(console, ...args);
-  };
-});
+    originalError.call(console, ...args)
+  }
+})
 
 afterAll(() => {
-  console.error = originalError;
-});
+  console.error = originalError
+})

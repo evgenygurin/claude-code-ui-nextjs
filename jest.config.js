@@ -31,7 +31,7 @@ const customJestConfig = {
     '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }],
   },
   transformIgnorePatterns: [
-    '/node_modules/',
+    '/node_modules/(?!(framer-motion)/)',
     '^.+\\.module\\.(css|sass|scss)$',
   ],
 };

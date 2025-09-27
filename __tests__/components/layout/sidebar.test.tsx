@@ -4,15 +4,54 @@ import Sidebar from '@/components/layout/sidebar';
 // Mock framer-motion
 jest.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, initial, animate, transition, ...props }: any) => (
-      <div {...props}>{children}</div>
+    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    button: ({ children, ...props }: any) => (
+      <button {...props}>{children}</button>
     ),
-    span: ({ children, initial, animate, transition, exit, ...props }: any) => (
-      <span {...props}>{children}</span>
-    ),
+    nav: ({ children, ...props }: any) => <nav {...props}>{children}</nav>,
+    span: ({ children, ...props }: any) => <span {...props}>{children}</span>,
   },
   AnimatePresence: ({ children }: any) => children,
 }));
+
+// Mock Button component
+jest.mock('@/components/ui/button', () => ({
+  Button: ({ children, ...props }: any) => (
+    <button {...props}>{children}</button>
+  ),
+}));
+
+// Mock lib/utils
+jest.mock('@/lib/utils', () => ({
+  cn: (...classes: any[]) => classes.filter(Boolean).join(' '),
+}));
+
+// Mock lucide-react icons
+jest.mock(
+  'lucide-react',
+  () => {
+    const MockIcon = ({ ...props }: any) => (
+      <svg {...props} data-testid="mock-icon">
+        icon
+      </svg>
+    );
+
+    return {
+      ChevronLeft: MockIcon,
+      ChevronRight: MockIcon,
+      Home: MockIcon,
+      FolderOpen: MockIcon,
+      FileText: MockIcon,
+      MessageSquare: MockIcon,
+      Terminal: MockIcon,
+      GitBranch: MockIcon,
+      Search: MockIcon,
+      Plus: MockIcon,
+      Settings: MockIcon,
+    };
+  },
+  { virtual: true }
+);
 
 describe('Sidebar', () => {
   const defaultProps = {
