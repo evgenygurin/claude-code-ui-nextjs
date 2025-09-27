@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import ChatInterface from '@/components/chat/chat-interface';
 
 // Mock react-markdown
@@ -90,14 +90,18 @@ describe('ChatInterface', () => {
     expect(screen.getByText('Claude is thinking...')).toBeInTheDocument();
     
     // Fast-forward time to simulate response
-    jest.advanceTimersByTime(2500);
+    act(() => {
+      jest.advanceTimersByTime(2500);
+    });
     
     await waitFor(() => {
       expect(screen.queryByText('Claude is thinking...')).not.toBeInTheDocument();
     });
     
     // Should show simulated response
-    expect(screen.getByText(/I understand you want to/)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(/I understand you want to/)).toBeInTheDocument();
+    });
   });
 
   it('should copy message content', () => {
@@ -159,7 +163,7 @@ describe('ChatInterface', () => {
     expect(input).toHaveValue('');
     
     // Send button should show stop icon while loading
-    const stopIcon = screen.getByRole('button', { name: /square/i });
-    expect(stopIcon).toBeInTheDocument();
+    const stopButton = screen.getByRole('button', { name: /stop/i });
+    expect(stopButton).toBeInTheDocument();
   });
 });
