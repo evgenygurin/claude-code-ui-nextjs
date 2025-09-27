@@ -79,15 +79,29 @@ jobs:
           name: Deploy to Vercel Preview
           no_output_timeout: 20m
           command: |
+            if [ -z "$VERCEL_TOKEN" ]; then
+              echo "⚠️ VERCEL_TOKEN not configured, skipping preview deployment"
+              echo "To enable preview deployments, add VERCEL_TOKEN to CircleCI environment variables"
+              exit 0
+            fi
+            
             if [ -n "${CIRCLE_PULL_REQUEST}" ]; then
               echo "🚀 Deploying preview for PR ${CIRCLE_PULL_REQUEST}"
               
               # Pull Vercel project configuration
-              vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
+              vercel pull --yes --environment=preview --token=$VERCEL_TOKEN || {
+                echo "❌ Failed to pull Vercel configuration"
+                echo "This might be due to missing project configuration or invalid token"
+                exit 0
+              }
               
               # Skip Vercel build since we already built in previous step
               # Use the prebuilt .next directory from workspace
-              vercel deploy --prebuilt --token=$VERCEL_TOKEN > deployment-url.txt
+              vercel deploy --prebuilt --token=$VERCEL_TOKEN > deployment-url.txt || {
+                echo "❌ Vercel deployment failed"
+                echo "Preview deployment is optional, continuing with CI/CD pipeline"
+                exit 0
+              }
               
               # Output the deployment URL
               echo "✅ Preview URL: $(cat deployment-url.txt)"
@@ -109,14 +123,14 @@ jobs:
           no_output_timeout: 20m
           command: |
             echo "🚀 Deploying to production"
-            
+
             # Pull Vercel project configuration
             vercel pull --yes --environment=production --token=$VERCEL_TOKEN
-            
+
             # Skip Vercel build since we already built in previous step
             # Use the prebuilt .next directory from workspace
             vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN > deployment-url.txt
-            
+
             # Output the deployment URL
             echo "✅ Production URL: $(cat deployment-url.txt)"
 
@@ -245,7 +259,7 @@ workflows:
   nightly:
     triggers:
       - schedule:
-          cron: "0 0 * * *"
+          cron: '0 0 * * *'
           filters:
             branches:
               only:
@@ -266,7 +280,7 @@ workflows:
   codegen_integration:
     triggers:
       - schedule:
-          cron: "0 6 * * 1"  # Weekly on Mondays
+          cron: '0 6 * * 1' # Weekly on Mondays
           filters:
             branches:
               only: main

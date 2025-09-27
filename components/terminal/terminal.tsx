@@ -56,51 +56,56 @@ export default function Terminal() {
     setIsRunning(true);
 
     // Simulate command execution
-    setTimeout(() => {
-      let response = '';
-      
-      switch (command.toLowerCase()) {
-        case 'ls':
-        case 'ls -la':
-          response = 'src/\ncomponents/\npublic/\npackage.json\nREADME.md\ntsconfig.json';
-          break;
-        case 'pwd':
-          response = '/home/user/project';
-          break;
-        case 'claude':
-          response = 'Claude Code CLI v2.1.0\nType "claude help" for available commands';
-          break;
-        case 'claude help':
-          response = `Available commands:
+    setTimeout(
+      () => {
+        let response = '';
+
+        switch (command.toLowerCase()) {
+          case 'ls':
+          case 'ls -la':
+            response =
+              'src/\ncomponents/\npublic/\npackage.json\nREADME.md\ntsconfig.json';
+            break;
+          case 'pwd':
+            response = '/home/user/project';
+            break;
+          case 'claude':
+            response =
+              'Claude Code CLI v2.1.0\nType "claude help" for available commands';
+            break;
+          case 'claude help':
+            response = `Available commands:
   claude chat        - Start interactive chat
   claude project     - Manage projects
   claude files       - File operations
   claude tools       - Tool management
   claude --version   - Show version`;
-          break;
-        case 'clear':
-          setOutput([]);
-          setIsRunning(false);
-          return;
-        case 'whoami':
-          response = 'claude-user';
-          break;
-        case 'date':
-          response = new Date().toString();
-          break;
-        default:
-          if (command.startsWith('echo ')) {
-            response = command.substring(5);
-          } else if (command.startsWith('claude ')) {
-            response = `Executing Claude Code command: ${command}`;
-          } else {
-            response = `command not found: ${command}`;
-          }
-      }
+            break;
+          case 'clear':
+            setOutput([]);
+            setIsRunning(false);
+            return;
+          case 'whoami':
+            response = 'claude-user';
+            break;
+          case 'date':
+            response = new Date().toString();
+            break;
+          default:
+            if (command.startsWith('echo ')) {
+              response = command.substring(5);
+            } else if (command.startsWith('claude ')) {
+              response = `Executing Claude Code command: ${command}`;
+            } else {
+              response = `command not found: ${command}`;
+            }
+        }
 
-      setOutput(prev => [...prev, response, '']);
-      setIsRunning(false);
-    }, 500 + Math.random() * 1000);
+        setOutput(prev => [...prev, response, '']);
+        setIsRunning(false);
+      },
+      500 + Math.random() * 1000
+    );
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -112,7 +117,10 @@ export default function Terminal() {
       case 'ArrowUp':
         e.preventDefault();
         if (commandHistory.length > 0) {
-          const newIndex = historyIndex === -1 ? commandHistory.length - 1 : Math.max(0, historyIndex - 1);
+          const newIndex =
+            historyIndex === -1
+              ? commandHistory.length - 1
+              : Math.max(0, historyIndex - 1);
           setHistoryIndex(newIndex);
           setCurrentInput(commandHistory[newIndex] || '');
         }
@@ -120,9 +128,12 @@ export default function Terminal() {
       case 'ArrowDown':
         e.preventDefault();
         if (historyIndex !== -1) {
-          const newIndex = historyIndex === commandHistory.length - 1 ? -1 : historyIndex + 1;
+          const newIndex =
+            historyIndex === commandHistory.length - 1 ? -1 : historyIndex + 1;
           setHistoryIndex(newIndex);
-          setCurrentInput(newIndex === -1 ? '' : commandHistory[newIndex] || '');
+          setCurrentInput(
+            newIndex === -1 ? '' : commandHistory[newIndex] || ''
+          );
         }
         break;
       case 'Tab':
@@ -154,21 +165,32 @@ export default function Terminal() {
       cwd: '~/project',
       isActive: false,
     };
-    setTabs(prev => prev.map(tab => ({ ...tab, isActive: false })).concat({ ...newTab, isActive: true }));
+    setTabs(prev =>
+      prev
+        .map(tab => ({ ...tab, isActive: false }))
+        .concat({ ...newTab, isActive: true })
+    );
   };
 
   const closeTab = (tabId: string) => {
     setTabs(prev => {
       const filtered = prev.filter(tab => tab.id !== tabId);
       if (filtered.length === 0) {
-        return [{ id: Date.now().toString(), title: 'bash', cwd: '~/project', isActive: true }];
+        return [
+          {
+            id: Date.now().toString(),
+            title: 'bash',
+            cwd: '~/project',
+            isActive: true,
+          },
+        ];
       }
-      
+
       const closingActiveTab = prev.find(tab => tab.id === tabId)?.isActive;
       if (closingActiveTab && filtered.length > 0 && filtered[0]) {
         filtered[0].isActive = true;
       }
-      
+
       return filtered;
     });
   };
@@ -189,37 +211,39 @@ export default function Terminal() {
   }, [output]);
 
   return (
-    <div className={cn(
-      'flex flex-col bg-background',
-      isMaximized ? 'fixed inset-0 z-50' : 'h-full'
-    )}>
+    <div
+      className={cn(
+        'flex flex-col bg-background',
+        isMaximized ? 'fixed inset-0 z-50' : 'h-full'
+      )}
+    >
       {/* Header */}
       <div className="flex items-center justify-between border-b bg-card/30 backdrop-blur-sm">
         {/* Tabs */}
         <div className="flex items-center">
-          {tabs.map((tab) => (
+          {tabs.map(tab => (
             <div
               key={tab.id}
               className={cn(
-                'flex items-center gap-2 px-4 py-2 border-r cursor-pointer group',
+                'group flex cursor-pointer items-center gap-2 border-r px-4 py-2',
                 tab.isActive ? 'bg-background' : 'hover:bg-accent/50'
               )}
               onClick={() => switchTab(tab.id)}
             >
-              <TerminalIcon className="w-4 h-4" />
+              <TerminalIcon className="h-4 w-4" />
               <span className="text-sm">{tab.title}</span>
               <span className="text-xs text-muted-foreground">{tab.cwd}</span>
               {tabs.length > 1 && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="w-4 h-4 opacity-0 group-hover:opacity-100"
-                  onClick={(e) => {
+                  className="h-4 w-4 opacity-0 group-hover:opacity-100"
+                  onClick={e => {
                     e.stopPropagation();
                     closeTab(tab.id);
                   }}
                 >
-                  <X className="w-3 h-3" />
+                  <X className="h-3 w-3" />
                 </Button>
               )}
             </div>
@@ -227,23 +251,28 @@ export default function Terminal() {
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 m-1"
+            className="m-1 h-8 w-8"
             onClick={addTab}
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="h-4 w-4" />
           </Button>
         </div>
 
         {/* Actions */}
         <div className="flex items-center gap-1 p-2">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={copyOutput}>
-            <Copy className="w-4 h-4" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={copyOutput}
+          >
+            <Copy className="h-4 w-4" />
           </Button>
           <Button variant="ghost" size="icon" className="h-8 w-8">
-            <Download className="w-4 h-4" />
+            <Download className="h-4 w-4" />
           </Button>
           <Button variant="ghost" size="icon" className="h-8 w-8">
-            <Settings className="w-4 h-4" />
+            <Settings className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
@@ -251,7 +280,11 @@ export default function Terminal() {
             className="h-8 w-8"
             onClick={() => setIsMaximized(!isMaximized)}
           >
-            {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            {isMaximized ? (
+              <Minimize2 className="h-4 w-4" />
+            ) : (
+              <Maximize2 className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </div>
@@ -259,7 +292,7 @@ export default function Terminal() {
       {/* Terminal Output */}
       <div
         ref={terminalRef}
-        className="flex-1 p-4 font-mono text-sm overflow-y-auto custom-scrollbar terminal"
+        className="custom-scrollbar terminal flex-1 overflow-y-auto p-4 font-mono text-sm"
         style={{ backgroundColor: '#1e1e1e', color: '#d4d4d4' }}
       >
         {output.map((line, index) => (
@@ -280,9 +313,9 @@ export default function Terminal() {
           <input
             type="text"
             value={currentInput}
-            onChange={(e) => setCurrentInput(e.target.value)}
+            onChange={e => setCurrentInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="flex-1 bg-transparent border-none outline-none text-white ml-1"
+            className="ml-1 flex-1 border-none bg-transparent text-white outline-none"
             style={{ caretColor: '#d4d4d4' }}
             disabled={isRunning}
             autoFocus
@@ -303,23 +336,23 @@ export default function Terminal() {
           <motion.div
             animate={{ opacity: [0, 1, 0] }}
             transition={{ duration: 1, repeat: Infinity }}
-            className="inline-block w-2 h-4 bg-white ml-1"
+            className="ml-1 inline-block h-4 w-2 bg-white"
           />
         )}
       </div>
 
       {/* Status Bar */}
-      <div className="flex items-center justify-between border-t bg-card/30 backdrop-blur-sm px-4 py-2 text-sm">
+      <div className="flex items-center justify-between border-t bg-card/30 px-4 py-2 text-sm backdrop-blur-sm">
         <div className="flex items-center gap-4">
           <span className="text-muted-foreground">
             Connected to Claude Code CLI
           </span>
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <div className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
             <span className="text-green-500">Ready</span>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-2 text-muted-foreground">
           <span>Lines: {output.length}</span>
           <span>|</span>

@@ -36,7 +36,7 @@ class TaskScheduler {
 
   async scheduleDelayedTask() {
     console.log('⏰ Setting up 1-hour delayed task for PR readiness check...');
-    
+
     const delayedTask = {
       id: `delayed-${Date.now()}`,
       createdAt: new Date().toISOString(),
@@ -60,8 +60,9 @@ class TaskScheduler {
         branch: process.env.CIRCLE_BRANCH || 'main',
         buildNumber: process.env.CIRCLE_BUILD_NUM || 'local',
         commitSha: process.env.CIRCLE_SHA1 || 'unknown',
-        projectName: process.env.CIRCLE_PROJECT_REPONAME || 'claude-code-ui-nextjs'
-      }
+        projectName:
+          process.env.CIRCLE_PROJECT_REPONAME || 'claude-code-ui-nextjs',
+      },
     };
 
     const taskFile = path.join(this.tasksDir, `${delayedTask.id}.json`);
@@ -72,20 +73,20 @@ class TaskScheduler {
 
     // Set up cron job or webhook (in real scenario)
     await this.setupCronJob(delayedTask);
-    
+
     return delayedTask;
   }
 
   async setupCronJob(task) {
     // In a real implementation, this would set up a cron job
     // or webhook to trigger the task execution
-    
+
     console.log('🔧 Setting up task execution mechanism...');
-    
+
     // For GitHub Actions, we could create a workflow file
     // For CircleCI, we could use their API to trigger builds
     // For now, we'll create a simple script that can be run manually or via cron
-    
+
     const cronScript = `#!/bin/bash
 # CodeGen Delayed Task Execution Script
 # Generated at: ${new Date().toISOString()}
@@ -120,9 +121,9 @@ fi
 
     const cronScriptPath = path.join(this.tasksDir, `execute-${task.id}.sh`);
     fs.writeFileSync(cronScriptPath, cronScript);
-    
+
     // Make script executable
-    exec(`chmod +x "${cronScriptPath}"`, (error) => {
+    exec(`chmod +x "${cronScriptPath}"`, error => {
       if (error) {
         console.warn('⚠️  Could not make script executable:', error.message);
       } else {
@@ -143,13 +144,14 @@ fi
 
   async checkPendingTasks() {
     console.log('🔍 Checking for pending tasks...');
-    
+
     if (!fs.existsSync(this.tasksDir)) {
       console.log('📭 No tasks directory found');
       return [];
     }
 
-    const taskFiles = fs.readdirSync(this.tasksDir)
+    const taskFiles = fs
+      .readdirSync(this.tasksDir)
       .filter(file => file.endsWith('.json'))
       .map(file => path.join(this.tasksDir, file));
 
@@ -164,26 +166,36 @@ fi
     for (const taskFile of taskFiles) {
       try {
         const task = JSON.parse(fs.readFileSync(taskFile, 'utf8'));
-        
+
         // Validate that task has required fields
-        if (!task || !task.id || !task.type || !task.status || !task.scheduledFor) {
-          console.warn(`⚠️  Invalid task file (missing required fields): ${taskFile}`);
+        if (
+          !task ||
+          !task.id ||
+          !task.type ||
+          !task.status ||
+          !task.scheduledFor
+        ) {
+          console.warn(
+            `⚠️  Invalid task file (missing required fields): ${taskFile}`
+          );
           continue;
         }
-        
+
         const scheduledTime = new Date(task.scheduledFor);
-        
+
         console.log(`📋 Task: ${task.id}`);
         console.log(`   Type: ${task.type}`);
         console.log(`   Status: ${task.status}`);
         console.log(`   Scheduled: ${task.scheduledFor}`);
-        
+
         if (currentTime >= scheduledTime && task.status === 'scheduled') {
           console.log(`⏰ Task ${task.id} is ready for execution!`);
           readyTasks.push(task);
         } else {
           const timeRemaining = scheduledTime - currentTime;
-          console.log(`⏳ Time remaining: ${Math.round(timeRemaining / (1000 * 60))} minutes`);
+          console.log(
+            `⏳ Time remaining: ${Math.round(timeRemaining / (1000 * 60))} minutes`
+          );
         }
       } catch (error) {
         console.warn(`⚠️  Error reading task file ${taskFile}:`, error.message);
@@ -201,17 +213,17 @@ fi
   async executeReadyTasks(tasks) {
     for (const task of tasks) {
       console.log(`\n🎯 Executing task: ${task.id}`);
-      
+
       // Mark task as executing
       task.status = 'executing';
       task.executedAt = new Date().toISOString();
-      
+
       const taskFile = path.join(this.tasksDir, `${task.id}.json`);
       fs.writeFileSync(taskFile, JSON.stringify(task, null, 2));
 
       // Execute the task logic
       await this.executePRReadinessCheck(task);
-      
+
       // Mark task as completed
       task.status = 'completed';
       task.completedAt = new Date().toISOString();
@@ -222,12 +234,12 @@ fi
   async executePRReadinessCheck(task) {
     console.log('🔍 Checking PR readiness...');
     console.log('📋 Task instructions:', task.instructions);
-    
+
     // This would trigger CodeGen to:
     // 1. Check current PR status
     // 2. Verify CI/CD pipeline status
     // 3. If issues remain, repeat the cycle
-    
+
     console.log(`
 🤖 @codegen Scheduled PR readiness check for ${task.environment.projectName}
 
@@ -256,7 +268,7 @@ This is an automated follow-up from the CI/CD failure handling system.
       taskId: task.id,
       executedAt: new Date().toISOString(),
       action: 'pr_readiness_check',
-      status: 'triggered_codegen'
+      status: 'triggered_codegen',
     };
 
     const logFile = path.join(this.reportsDir, `execution-${Date.now()}.json`);
@@ -268,11 +280,11 @@ This is an automated follow-up from the CI/CD failure handling system.
       status = 'unknown',
       score = 0,
       issues = '',
-      interval = '6h'
+      interval = '6h',
     } = options;
 
     console.log(`🏥 Setting up health monitoring for status: ${status}`);
-    
+
     const healthTask = {
       id: `health-monitor-${Date.now()}`,
       createdAt: new Date().toISOString(),
@@ -285,15 +297,21 @@ This is an automated follow-up from the CI/CD failure handling system.
         detectedIssues: issues,
         monitoringInterval: interval,
         escalationEnabled: status === 'critical' || status === 'degraded',
-        maxRetries: status === 'critical' ? 10 : 5
+        maxRetries: status === 'critical' ? 10 : 5,
       },
       scheduledChecks: this.generateHealthCheckSchedule(status, interval),
       environment: {
-        branch: process.env.CIRCLE_BRANCH || process.env.GITHUB_REF_NAME || 'main',
-        buildNumber: process.env.CIRCLE_BUILD_NUM || process.env.GITHUB_RUN_NUMBER || 'local',
-        commitSha: process.env.CIRCLE_SHA1 || process.env.GITHUB_SHA || 'unknown',
-        projectName: process.env.CIRCLE_PROJECT_REPONAME || 'claude-code-ui-nextjs'
-      }
+        branch:
+          process.env.CIRCLE_BRANCH || process.env.GITHUB_REF_NAME || 'main',
+        buildNumber:
+          process.env.CIRCLE_BUILD_NUM ||
+          process.env.GITHUB_RUN_NUMBER ||
+          'local',
+        commitSha:
+          process.env.CIRCLE_SHA1 || process.env.GITHUB_SHA || 'unknown',
+        projectName:
+          process.env.CIRCLE_PROJECT_REPONAME || 'claude-code-ui-nextjs',
+      },
     };
 
     const taskFile = path.join(this.tasksDir, `${healthTask.id}.json`);
@@ -305,16 +323,16 @@ This is an automated follow-up from the CI/CD failure handling system.
 
     // Create health monitoring schedule
     await this.createHealthMonitoringSchedule(healthTask);
-    
+
     return healthTask;
   }
 
   getHealthPriority(status) {
     const priorities = {
-      'critical': 'high',
-      'degraded': 'high',
-      'warning': 'medium',
-      'healthy': 'low'
+      critical: 'high',
+      degraded: 'high',
+      warning: 'medium',
+      healthy: 'low',
     };
     return priorities[status] || 'medium';
   }
@@ -322,44 +340,51 @@ This is an automated follow-up from the CI/CD failure handling system.
   generateHealthCheckSchedule(status, baseInterval) {
     const now = new Date();
     const schedule = [];
-    
+
     // Parse interval (e.g., '30m', '2h', '24h')
     const intervalMs = this.parseInterval(baseInterval);
-    
+
     // Generate multiple check times based on health status
-    const checkCount = status === 'critical' ? 24 : status === 'degraded' ? 12 : 6;
-    
+    const checkCount =
+      status === 'critical' ? 24 : status === 'degraded' ? 12 : 6;
+
     for (let i = 1; i <= checkCount; i++) {
-      const checkTime = new Date(now.getTime() + (intervalMs * i));
+      const checkTime = new Date(now.getTime() + intervalMs * i);
       schedule.push({
         checkNumber: i,
         scheduledFor: checkTime.toISOString(),
         type: this.getCheckType(i, status),
-        completed: false
+        completed: false,
       });
     }
-    
+
     return schedule;
   }
 
   getCheckType(checkNumber, status) {
     if (status === 'critical') {
-      return checkNumber <= 3 ? 'immediate_assessment' : 
-             checkNumber <= 8 ? 'recovery_check' : 'stability_verification';
+      return checkNumber <= 3
+        ? 'immediate_assessment'
+        : checkNumber <= 8
+          ? 'recovery_check'
+          : 'stability_verification';
     }
-    
+
     if (status === 'degraded') {
-      return checkNumber <= 2 ? 'issue_analysis' :
-             checkNumber <= 6 ? 'improvement_check' : 'health_verification';
+      return checkNumber <= 2
+        ? 'issue_analysis'
+        : checkNumber <= 6
+          ? 'improvement_check'
+          : 'health_verification';
     }
-    
+
     return checkNumber === 1 ? 'routine_check' : 'trend_analysis';
   }
 
   parseInterval(interval) {
     const match = interval.match(/^(\d+)([mh])$/);
     if (!match) return 60 * 60 * 1000; // Default 1 hour
-    
+
     const [, amount, unit] = match;
     const multiplier = unit === 'm' ? 60 * 1000 : 60 * 60 * 1000;
     return parseInt(amount) * multiplier;
@@ -367,7 +392,7 @@ This is an automated follow-up from the CI/CD failure handling system.
 
   async createHealthMonitoringSchedule(healthTask) {
     console.log('🔧 Creating health monitoring execution scripts...');
-    
+
     const scriptContent = `#!/bin/bash
 # Health Monitoring Execution Script
 # Generated at: ${new Date().toISOString()}
@@ -474,11 +499,14 @@ esac
 echo "✅ Health monitoring execution completed"
 `;
 
-    const scriptPath = path.join(this.tasksDir, `health-monitor-${healthTask.id}.sh`);
+    const scriptPath = path.join(
+      this.tasksDir,
+      `health-monitor-${healthTask.id}.sh`
+    );
     fs.writeFileSync(scriptPath, scriptContent);
-    
+
     // Make script executable
-    exec(`chmod +x "${scriptPath}"`, (error) => {
+    exec(`chmod +x "${scriptPath}"`, error => {
       if (error) {
         console.warn('⚠️  Could not make script executable:', error.message);
       } else {
@@ -491,10 +519,14 @@ echo "✅ Health monitoring execution completed"
 
   async trackHealthTrends() {
     console.log('📈 Analyzing health trends...');
-    
-    const trendsFile = path.join(this.healthDir, 'trends', 'health-trends.json');
+
+    const trendsFile = path.join(
+      this.healthDir,
+      'trends',
+      'health-trends.json'
+    );
     let trends = { history: [], summary: {} };
-    
+
     if (fs.existsSync(trendsFile)) {
       try {
         trends = JSON.parse(fs.readFileSync(trendsFile, 'utf8'));
@@ -502,23 +534,26 @@ echo "✅ Health monitoring execution completed"
         console.warn('⚠️  Could not read existing trends file:', error.message);
       }
     }
-    
+
     // Collect recent health data
     const reportsDir = path.join(this.healthDir, 'reports');
     if (fs.existsSync(reportsDir)) {
-      const reportFiles = fs.readdirSync(reportsDir)
+      const reportFiles = fs
+        .readdirSync(reportsDir)
         .filter(file => file.endsWith('-health-report.md'))
         .sort()
         .slice(-20); // Keep last 20 reports
-      
-      console.log(`📋 Analyzing ${reportFiles.length} recent health reports...`);
-      
+
+      console.log(
+        `📋 Analyzing ${reportFiles.length} recent health reports...`
+      );
+
       // Simple trend analysis (would be more sophisticated in production)
       trends.lastUpdated = new Date().toISOString();
       trends.reportsAnalyzed = reportFiles.length;
       trends.summary.trendDirection = this.determineTrendDirection(reportFiles);
     }
-    
+
     fs.writeFileSync(trendsFile, JSON.stringify(trends, null, 2));
     console.log(`📊 Health trends updated: ${trendsFile}`);
   }
@@ -526,19 +561,21 @@ echo "✅ Health monitoring execution completed"
   determineTrendDirection(reportFiles) {
     // Simple trend analysis based on filename timestamps
     if (reportFiles.length < 2) return 'insufficient_data';
-    
+
     const recent = reportFiles.slice(-3);
     const older = reportFiles.slice(-6, -3);
-    
+
     // In a real implementation, we'd parse the reports and analyze actual health scores
     return recent.length > older.length ? 'improving' : 'stable';
   }
 
-  async cleanupOldTasks(maxAge = 7 * 24 * 60 * 60 * 1000) { // 7 days
+  async cleanupOldTasks(maxAge = 7 * 24 * 60 * 60 * 1000) {
+    // 7 days
     console.log('🧹 Cleaning up old tasks and health monitoring data...');
-    
+
     // Cleanup old tasks
-    const taskFiles = fs.readdirSync(this.tasksDir)
+    const taskFiles = fs
+      .readdirSync(this.tasksDir)
       .filter(file => file.endsWith('.json'));
 
     const cutoffTime = new Date(Date.now() - maxAge);
@@ -549,7 +586,7 @@ echo "✅ Health monitoring execution completed"
       try {
         const task = JSON.parse(fs.readFileSync(taskPath, 'utf8'));
         const taskTime = new Date(task.createdAt);
-        
+
         if (taskTime < cutoffTime && task.status === 'completed') {
           fs.unlinkSync(taskPath);
           cleanedCount++;
@@ -563,24 +600,27 @@ echo "✅ Health monitoring execution completed"
     // Cleanup old health reports (keep last 30 days)
     const healthReportsDir = path.join(this.healthDir, 'reports');
     if (fs.existsSync(healthReportsDir)) {
-      const healthReports = fs.readdirSync(healthReportsDir)
+      const healthReports = fs
+        .readdirSync(healthReportsDir)
         .filter(file => file.endsWith('.md'));
-      
-      const healthCutoff = new Date(Date.now() - (30 * 24 * 60 * 60 * 1000)); // 30 days
+
+      const healthCutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // 30 days
       let healthCleanedCount = 0;
-      
+
       for (const file of healthReports) {
         const reportPath = path.join(healthReportsDir, file);
         const stats = fs.statSync(reportPath);
-        
+
         if (stats.mtime < healthCutoff) {
           fs.unlinkSync(reportPath);
           healthCleanedCount++;
           console.log(`🗑️  Removed old health report: ${file}`);
         }
       }
-      
-      console.log(`✅ Health cleanup complete. Removed ${healthCleanedCount} old reports.`);
+
+      console.log(
+        `✅ Health cleanup complete. Removed ${healthCleanedCount} old reports.`
+      );
     }
 
     console.log(`✅ Task cleanup complete. Removed ${cleanedCount} old tasks.`);
@@ -595,7 +635,7 @@ if (require.main === module) {
   // Parse command line arguments
   const args = process.argv.slice(3);
   const options = {};
-  
+
   for (let i = 0; i < args.length; i += 2) {
     if (args[i] && args[i].startsWith('--') && args[i + 1]) {
       const key = args[i].substring(2);
@@ -609,29 +649,29 @@ if (require.main === module) {
       case 'schedule':
         await scheduler.scheduleDelayedTask();
         break;
-      
+
       case 'schedule-health-monitoring':
         const healthOptions = {
           status: options.status || 'unknown',
           score: parseInt(options.score) || 0,
           issues: options.issues || '',
-          interval: options.interval || '6h'
+          interval: options.interval || '6h',
         };
         await scheduler.scheduleHealthMonitoring(healthOptions);
         break;
-      
+
       case 'check':
         await scheduler.checkPendingTasks();
         break;
-      
+
       case 'health-trends':
         await scheduler.trackHealthTrends();
         break;
-      
+
       case 'cleanup':
         await scheduler.cleanupOldTasks();
         break;
-      
+
       case 'help':
       default:
         console.log(`

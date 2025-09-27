@@ -112,7 +112,7 @@ export default function SettingsPanel() {
   const renderAppearanceSettings = () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium mb-4">Theme</h3>
+        <h3 className="mb-4 text-lg font-medium">Theme</h3>
         <div className="grid grid-cols-3 gap-3">
           {[
             { value: 'light', label: 'Light', icon: Sun },
@@ -122,15 +122,13 @@ export default function SettingsPanel() {
             <button
               key={value}
               onClick={() => updateSetting('theme', value)}
-              className={`
-                flex items-center gap-3 p-4 rounded-lg border text-left transition-all
-                ${settings.theme === value 
-                  ? 'border-primary bg-primary/5' 
+              className={`flex items-center gap-3 rounded-lg border p-4 text-left transition-all ${
+                settings.theme === value
+                  ? 'border-primary bg-primary/5'
                   : 'border-border hover:bg-accent'
-                }
-              `}
+              } `}
             >
-              <Icon className="w-5 h-5" />
+              <Icon className="h-5 w-5" />
               <span className="font-medium">{label}</span>
             </button>
           ))}
@@ -138,16 +136,13 @@ export default function SettingsPanel() {
       </div>
 
       <div>
-        <h3 className="text-lg font-medium mb-4">Accent Color</h3>
+        <h3 className="mb-4 text-lg font-medium">Accent Color</h3>
         <div className="flex gap-2">
-          {['blue', 'purple', 'pink', 'green', 'orange'].map((color) => (
+          {['blue', 'purple', 'pink', 'green', 'orange'].map(color => (
             <button
               key={color}
               onClick={() => updateSetting('accentColor', color)}
-              className={`
-                w-8 h-8 rounded-full border-2 transition-all
-                ${settings.accentColor === color ? 'border-foreground scale-110' : 'border-transparent'}
-              `}
+              className={`h-8 w-8 rounded-full border-2 transition-all ${settings.accentColor === color ? 'scale-110 border-foreground' : 'border-transparent'} `}
               style={{ backgroundColor: `var(--${color}-500)` }}
             />
           ))}
@@ -155,7 +150,7 @@ export default function SettingsPanel() {
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-2">
+        <label className="mb-2 block text-sm font-medium">
           Font Size: {settings.fontSize}px
         </label>
         <input
@@ -163,7 +158,7 @@ export default function SettingsPanel() {
           min="10"
           max="20"
           value={settings.fontSize}
-          onChange={(e) => updateSetting('fontSize', Number(e.target.value))}
+          onChange={e => updateSetting('fontSize', Number(e.target.value))}
           className="w-full"
         />
       </div>
@@ -173,11 +168,11 @@ export default function SettingsPanel() {
   const renderEditorSettings = () => (
     <div className="space-y-6">
       <div>
-        <label className="block text-sm font-medium mb-2">Font Family</label>
+        <label className="mb-2 block text-sm font-medium">Font Family</label>
         <select
           value={settings.fontFamily}
-          onChange={(e) => updateSetting('fontFamily', e.target.value)}
-          className="w-full px-3 py-2 border rounded-md bg-background"
+          onChange={e => updateSetting('fontFamily', e.target.value)}
+          className="w-full rounded-md border bg-background px-3 py-2"
         >
           <option value="Monaco">Monaco</option>
           <option value="Menlo">Menlo</option>
@@ -188,7 +183,7 @@ export default function SettingsPanel() {
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-2">
+        <label className="mb-2 block text-sm font-medium">
           Tab Size: {settings.tabSize}
         </label>
         <input
@@ -196,7 +191,7 @@ export default function SettingsPanel() {
           min="2"
           max="8"
           value={settings.tabSize}
-          onChange={(e) => updateSetting('tabSize', Number(e.target.value))}
+          onChange={e => updateSetting('tabSize', Number(e.target.value))}
           className="w-full"
         />
       </div>
@@ -212,8 +207,8 @@ export default function SettingsPanel() {
             <input
               type="checkbox"
               checked={settings[key as keyof typeof settings] as boolean}
-              onChange={(e) => updateSetting(key, e.target.checked)}
-              className="w-4 h-4 rounded border border-input"
+              onChange={e => updateSetting(key, e.target.checked)}
+              className="h-4 w-4 rounded border border-input"
             />
             <span>{label}</span>
           </label>
@@ -225,11 +220,11 @@ export default function SettingsPanel() {
   const renderTerminalSettings = () => (
     <div className="space-y-6">
       <div>
-        <label className="block text-sm font-medium mb-2">Default Shell</label>
+        <label className="mb-2 block text-sm font-medium">Default Shell</label>
         <select
           value={settings.terminalShell}
-          onChange={(e) => updateSetting('terminalShell', e.target.value)}
-          className="w-full px-3 py-2 border rounded-md bg-background"
+          onChange={e => updateSetting('terminalShell', e.target.value)}
+          className="w-full rounded-md border bg-background px-3 py-2"
         >
           <option value="bash">Bash</option>
           <option value="zsh">Zsh</option>
@@ -239,7 +234,7 @@ export default function SettingsPanel() {
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-2">
+        <label className="mb-2 block text-sm font-medium">
           Terminal Font Size: {settings.terminalFontSize}px
         </label>
         <input
@@ -247,7 +242,9 @@ export default function SettingsPanel() {
           min="10"
           max="18"
           value={settings.terminalFontSize}
-          onChange={(e) => updateSetting('terminalFontSize', Number(e.target.value))}
+          onChange={e =>
+            updateSetting('terminalFontSize', Number(e.target.value))
+          }
           className="w-full"
         />
       </div>
@@ -261,8 +258,8 @@ export default function SettingsPanel() {
           <input
             type="checkbox"
             checked={settings.notifications}
-            onChange={(e) => updateSetting('notifications', e.target.checked)}
-            className="w-4 h-4 rounded border border-input"
+            onChange={e => updateSetting('notifications', e.target.checked)}
+            className="h-4 w-4 rounded border border-input"
           />
           <span>Enable Notifications</span>
         </label>
@@ -271,11 +268,11 @@ export default function SettingsPanel() {
           <input
             type="checkbox"
             checked={settings.soundEffects}
-            onChange={(e) => updateSetting('soundEffects', e.target.checked)}
-            className="w-4 h-4 rounded border border-input"
+            onChange={e => updateSetting('soundEffects', e.target.checked)}
+            className="h-4 w-4 rounded border border-input"
           />
           <div className="flex items-center gap-2">
-            <Volume2 className="w-4 h-4" />
+            <Volume2 className="h-4 w-4" />
             <span>Sound Effects</span>
           </div>
         </label>
@@ -286,49 +283,60 @@ export default function SettingsPanel() {
   const renderSecuritySettings = () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
-          <Key className="w-5 h-5" />
+        <h3 className="mb-4 flex items-center gap-2 text-lg font-medium">
+          <Key className="h-5 w-5" />
           API Keys
         </h3>
-        
+
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Claude API Key</label>
+            <label className="mb-2 block text-sm font-medium">
+              Claude API Key
+            </label>
             <input
               type="password"
               value={settings.apiKeys.claude}
-              onChange={(e) => updateNestedSetting('apiKeys', 'claude', e.target.value)}
+              onChange={e =>
+                updateNestedSetting('apiKeys', 'claude', e.target.value)
+              }
               placeholder="sk-..."
-              className="w-full px-3 py-2 border rounded-md bg-background font-mono text-sm"
+              className="w-full rounded-md border bg-background px-3 py-2 font-mono text-sm"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">OpenAI API Key</label>
+            <label className="mb-2 block text-sm font-medium">
+              OpenAI API Key
+            </label>
             <input
               type="password"
               value={settings.apiKeys.openai}
-              onChange={(e) => updateNestedSetting('apiKeys', 'openai', e.target.value)}
+              onChange={e =>
+                updateNestedSetting('apiKeys', 'openai', e.target.value)
+              }
               placeholder="sk-..."
-              className="w-full px-3 py-2 border rounded-md bg-background font-mono text-sm"
+              className="w-full rounded-md border bg-background px-3 py-2 font-mono text-sm"
             />
           </div>
         </div>
       </div>
 
-      <div className="pt-4 border-t">
-        <h3 className="text-lg font-medium mb-4">Data Management</h3>
+      <div className="border-t pt-4">
+        <h3 className="mb-4 text-lg font-medium">Data Management</h3>
         <div className="space-y-3">
           <Button variant="outline" className="w-full justify-start gap-2">
-            <Download className="w-4 h-4" />
+            <Download className="h-4 w-4" />
             Export Settings
           </Button>
           <Button variant="outline" className="w-full justify-start gap-2">
-            <Upload className="w-4 h-4" />
+            <Upload className="h-4 w-4" />
             Import Settings
           </Button>
-          <Button variant="outline" className="w-full justify-start gap-2 text-orange-500">
-            <RotateCcw className="w-4 h-4" />
+          <Button
+            variant="outline"
+            className="w-full justify-start gap-2 text-orange-500"
+          >
+            <RotateCcw className="h-4 w-4" />
             Reset to Defaults
           </Button>
         </div>
@@ -339,19 +347,24 @@ export default function SettingsPanel() {
   const renderIntegrationsSettings = () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium mb-4">External Services</h3>
+        <h3 className="mb-4 text-lg font-medium">External Services</h3>
         <div className="space-y-4">
           {[
             { name: 'GitHub', status: 'connected', color: 'green' },
             { name: 'GitLab', status: 'disconnected', color: 'gray' },
             { name: 'Vercel', status: 'connected', color: 'green' },
             { name: 'Netlify', status: 'disconnected', color: 'gray' },
-          ].map((service) => (
-            <div key={service.name} className="flex items-center justify-between p-3 border rounded-lg">
+          ].map(service => (
+            <div
+              key={service.name}
+              className="flex items-center justify-between rounded-lg border p-3"
+            >
               <div className="flex items-center gap-3">
-                <div className={`w-2 h-2 rounded-full bg-${service.color}-500`} />
+                <div
+                  className={`h-2 w-2 rounded-full bg-${service.color}-500`}
+                />
                 <span className="font-medium">{service.name}</span>
-                <span className="text-sm text-muted-foreground capitalize">
+                <span className="text-sm capitalize text-muted-foreground">
                   {service.status}
                 </span>
               </div>
@@ -388,29 +401,27 @@ export default function SettingsPanel() {
     <div className="flex h-full bg-background">
       {/* Sidebar */}
       <div className="w-64 border-r bg-card/30 backdrop-blur-sm">
-        <div className="p-4 border-b">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <Settings className="w-5 h-5" />
+        <div className="border-b p-4">
+          <h2 className="flex items-center gap-2 text-lg font-semibold">
+            <Settings className="h-5 w-5" />
             Settings
           </h2>
         </div>
-        
+
         <nav className="p-2">
-          {settingSections.map((section) => {
+          {settingSections.map(section => {
             const Icon = section.icon;
             return (
               <button
                 key={section.id}
                 onClick={() => setActiveSection(section.id)}
-                className={`
-                  w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors
-                  ${activeSection === section.id 
-                    ? 'bg-accent text-accent-foreground' 
+                className={`flex w-full items-center gap-3 rounded-lg p-3 text-left transition-colors ${
+                  activeSection === section.id
+                    ? 'bg-accent text-accent-foreground'
                     : 'hover:bg-accent/50'
-                  }
-                `}
+                } `}
               >
-                <Icon className="w-4 h-4 shrink-0" />
+                <Icon className="h-4 w-4 shrink-0" />
                 <div>
                   <div className="font-medium">{section.title}</div>
                   <div className="text-xs text-muted-foreground">
@@ -443,12 +454,10 @@ export default function SettingsPanel() {
 
             {renderCurrentSection()}
 
-            <div className="flex justify-end gap-3 pt-8 border-t mt-8">
-              <Button variant="outline">
-                Cancel
-              </Button>
+            <div className="mt-8 flex justify-end gap-3 border-t pt-8">
+              <Button variant="outline">Cancel</Button>
               <Button className="gap-2">
-                <Save className="w-4 h-4" />
+                <Save className="h-4 w-4" />
                 Save Changes
               </Button>
             </div>

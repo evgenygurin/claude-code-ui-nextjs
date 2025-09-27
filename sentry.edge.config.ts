@@ -1,5 +1,5 @@
 // This file configures the initialization of Sentry for edge runtime
-import * as Sentry from "@sentry/nextjs";
+import * as Sentry from '@sentry/nextjs';
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
@@ -16,9 +16,9 @@ Sentry.init({
   // CodeGen integration - set via initialScope
   initialScope: {
     tags: {
-      component: "claude-code-ui",
-      platform: "nextjs-edge",
-      codegen: "enabled",
+      component: 'claude-code-ui',
+      platform: 'nextjs-edge',
+      codegen: 'enabled',
     },
   },
 
@@ -26,8 +26,8 @@ Sentry.init({
   beforeSend(event) {
     // Add edge runtime context
     if (event.tags) {
-      event.tags.runtime = "edge";
-      event.tags.framework = "nextjs";
+      event.tags.runtime = 'edge';
+      event.tags.framework = 'nextjs';
     }
 
     return event;
