@@ -19,10 +19,13 @@ describe('ChatInterface', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     jest.clearAllMocks();
+    // Mock Math.random to return consistent results
+    jest.spyOn(Math, 'random').mockReturnValue(0);
   });
 
   afterEach(() => {
     jest.useRealTimers();
+    jest.restoreAllMocks();
   });
 
   it('should render with initial welcome message', () => {
@@ -171,7 +174,7 @@ describe('ChatInterface', () => {
     // Input should be disabled while loading
     expect(input).toHaveValue('');
     
-    // Send button should show stop icon while loading  
+    // Send button should show stop icon while loading
     const stopIcon = screen.getByRole('button', { name: /stop/i });
     expect(stopIcon).toBeInTheDocument();
   });
