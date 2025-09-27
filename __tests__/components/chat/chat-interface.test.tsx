@@ -82,15 +82,13 @@ describe('ChatInterface', () => {
 
   it('should simulate AI response after delay', async () => {
     render(<ChatInterface />);
-    
+
     const input = screen.getByPlaceholderText(/Type your message/);
     const sendButton = screen.getByRole('button', { name: /send/i });
-    
-    await act(async () => {
-      fireEvent.change(input, { target: { value: 'Test command' } });
-      fireEvent.click(sendButton);
-    });
-    
+
+    fireEvent.change(input, { target: { value: 'Test command' } });
+    fireEvent.click(sendButton);
+
     // Should show loading initially
     expect(screen.getByText('Claude is thinking...')).toBeInTheDocument();
 
@@ -100,7 +98,9 @@ describe('ChatInterface', () => {
     });
 
     await waitFor(() => {
-      expect(screen.queryByText('Claude is thinking...')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('Claude is thinking...')
+      ).not.toBeInTheDocument();
     });
 
     // Should show simulated response (match any of the possible responses)
@@ -166,18 +166,16 @@ describe('ChatInterface', () => {
 
   it('should disable input while loading', async () => {
     render(<ChatInterface />);
-    
+
     const input = screen.getByPlaceholderText(/Type your message/);
     const sendButton = screen.getByRole('button', { name: /send/i });
-    
-    await act(async () => {
-      fireEvent.change(input, { target: { value: 'Test message' } });
-      fireEvent.click(sendButton);
-    });
-    
+
+    fireEvent.change(input, { target: { value: 'Test message' } });
+    fireEvent.click(sendButton);
+
     // Input should be disabled while loading
     expect(input).toHaveValue('');
-    
+
     // Send button should show stop icon while loading
     const stopIcon = screen.getByRole('button', { name: /stop/i });
     expect(stopIcon).toBeInTheDocument();

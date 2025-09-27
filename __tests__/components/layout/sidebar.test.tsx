@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import Sidebar from '@/components/layout/sidebar';
 
-// framer-motion is already mocked globally in jest.setup.js
+// Framer motion is mocked globally in jest.setup.js
 
 // Mock Button component
 jest.mock('@/components/ui/button', () => ({

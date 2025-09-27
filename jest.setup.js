@@ -86,7 +86,7 @@ HTMLElement.prototype.scrollIntoView = jest.fn()
 // Mock window.scrollTo
 global.scrollTo = jest.fn()
 
-// Mock Math.random and Math.floor for deterministic tests  
+// Mock Math.random and Math.floor for deterministic tests
 global.Math.random = jest.fn(() => 0.5)
 global.Math.floor = jest.fn((x) => x >= 0 ? Math.trunc(x) : Math.trunc(x) - 1)
 
@@ -161,6 +161,18 @@ jest.mock('lucide-react', () => {
     Edit: MockIcon,
     Eye: MockIcon,
     EyeOff: MockIcon,
+    File: MockIcon,
+    Folder: MockIcon,
+    Image: MockIcon,
+    Trash: MockIcon,
+    X: MockIcon,
+    Check: MockIcon,
+    AlertCircle: MockIcon,
+    Info: MockIcon,
+    CheckCircle: MockIcon,
+    XCircle: MockIcon,
+    Loader: MockIcon,
+    Menu: MockIcon,
   }
 })
 
