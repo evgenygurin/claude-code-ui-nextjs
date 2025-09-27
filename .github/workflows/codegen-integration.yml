@@ -144,7 +144,7 @@ If this issue is not resolved within 1 hour, the system will automatically:
   notify-codegen:
     runs-on: ubuntu-latest
     if: always()
-    needs: [pr-validation, codegen-placeholder, check-pending-tasks]
+    needs: [codegen-placeholder, check-pending-tasks]
     
     steps:
     - name: Notify CodeGen Service
