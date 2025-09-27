@@ -11,11 +11,13 @@ on:
         description: 'Error details'
         required: false
         default: 'Manual CodeGen trigger'
+  push:
+    branches: [ main, develop ]
 
 jobs:
   codegen-placeholder:
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     
     steps:
     - name: Checkout code
@@ -57,29 +59,29 @@ jobs:
           const errorDetails = '${{ github.event.inputs.error_details || "CI/CD pipeline failure" }}';
           const runUrl = '${{ github.event.workflow_run.html_url || github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
           
-          const issueBody = '🚨 Automated CI/CD Failure Report\n\n' +
-            'Error Type: ' + errorType + '\n' +
-            'Error Details: ' + errorDetails + '\n' +
-            'Workflow Run: [' + runUrl + '](' + runUrl + ')\n' +
-            'Branch: ${{ github.ref_name }}\n' +
-            'Commit: ${{ github.sha }}\n' +
-            'Timestamp: ' + new Date().toISOString() + '\n\n' +
-            '---\n\n' +
-            '@codegen Please analyze this CI/CD failure and implement fixes:\n\n' +
-            'Required Actions:\n' +
-            '1. Analyze the root cause of the failure\n' +
-            '2. Implement specific fixes for the identified issues\n' +
-            '3. Create/update comprehensive tests to prevent regression\n' +
-            '4. Review and improve CI/CD configuration if needed\n' +
-            '5. Run the full development cycle (lint → test → build → deploy)\n' +
-            '6. Create/update PR with all improvements\n' +
-            '7. Schedule follow-up check in 1 hour if issues persist\n\n' +
-            'Context:\n' +
-            '- Project: ${{ github.repository }}\n' +
-            '- Node.js version: 20.x\n' +
-            '- Framework: Next.js 15\n' +
-            '- CI/CD: CircleCI + GitHub Actions\n' +
-            '- Error handling: Automated CodeGen integration\n\n' +
+          const issueBody = '🚨 Automated CI/CD Failure Report\\n\\n' +
+            'Error Type: ' + errorType + '\\n' +
+            'Error Details: ' + errorDetails + '\\n' +
+            'Workflow Run: [' + runUrl + '](' + runUrl + ')\\n' +
+            'Branch: ${{ github.ref_name }}\\n' +
+            'Commit: ${{ github.sha }}\\n' +
+            'Timestamp: ' + new Date().toISOString() + '\\n\\n' +
+            '---\\n\\n' +
+            '@codegen Please analyze this CI/CD failure and implement fixes:\\n\\n' +
+            'Required Actions:\\n' +
+            '1. Analyze the root cause of the failure\\n' +
+            '2. Implement specific fixes for the identified issues\\n' +
+            '3. Create/update comprehensive tests to prevent regression\\n' +
+            '4. Review and improve CI/CD configuration if needed\\n' +
+            '5. Run the full development cycle (lint → test → build → deploy)\\n' +
+            '6. Create/update PR with all improvements\\n' +
+            '7. Schedule follow-up check in 1 hour if issues persist\\n\\n' +
+            'Context:\\n' +
+            '- Project: ${{ github.repository }}\\n' +
+            '- Node.js version: 20.x\\n' +
+            '- Framework: Next.js 15\\n' +
+            '- CI/CD: CircleCI + GitHub Actions\\n' +
+            '- Error handling: Automated CodeGen integration\\n\\n' +
             'This is an automated issue created by the CI/CD error handling system.';
 
           await github.rest.issues.create({
@@ -92,7 +94,7 @@ jobs:
 
   check-pending-tasks:
     runs-on: ubuntu-latest
-    if: github.event_name == 'schedule'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     
     steps:
     - name: Checkout code
@@ -159,4 +161,3 @@ jobs:
         # to notify CodeGen about the current status
         
         echo "✅ CodeGen notification completed"
-
