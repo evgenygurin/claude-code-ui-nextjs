@@ -34,7 +34,7 @@ describe('Button', () => {
   it('should handle click events', () => {
     const handleClick = jest.fn();
     render(<Button onClick={handleClick}>Click me</Button>);
-    
+
     fireEvent.click(screen.getByRole('button'));
     expect(handleClick).toHaveBeenCalledTimes(1);
   });
@@ -43,7 +43,10 @@ describe('Button', () => {
     render(<Button disabled>Disabled</Button>);
     const button = screen.getByRole('button');
     expect(button).toBeDisabled();
-    expect(button).toHaveClass('disabled:pointer-events-none', 'disabled:opacity-50');
+    expect(button).toHaveClass(
+      'disabled:pointer-events-none',
+      'disabled:opacity-50'
+    );
   });
 
   it('should render as child component when asChild is true', () => {
@@ -52,7 +55,7 @@ describe('Button', () => {
         <a href="/test">Link Button</a>
       </Button>
     );
-    
+
     const link = screen.getByRole('link');
     expect(link).toBeInTheDocument();
     expect(link).toHaveAttribute('href', '/test');
