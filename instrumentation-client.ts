@@ -1,31 +1,19 @@
-// This file configures the initialization of Sentry on the browser
-// Required for Turbopack compatibility
-import * as Sentry from "@sentry/nextjs";
+// This file configures the initialization of Sentry for client-side
+// Required for Next.js 15+ and Turbopack compatibility
+import * as Sentry from '@sentry/nextjs';
 
-// Only initialize Sentry if DSN is provided
-const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
+export async function register() {
+  // Only run on client-side
+  if (typeof window === 'undefined') return;
 
-if (dsn) {
   Sentry.init({
-    dsn,
+    dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
     // Performance monitoring
-    tracesSampleRate: 1.0,
+    tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
 
-    // Capture unhandled promise rejections
-    debug: false,
-
-    // Session replay
-    replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1.0,
-
-    integrations: [
-      Sentry.replayIntegration({
-        maskAllText: true,
-        blockAllMedia: true,
-      }),
-      Sentry.browserTracingIntegration(),
-    ],
+    // Capture all errors
+    debug: process.env.NODE_ENV === 'development',
 
     // Environment-specific configuration
     environment: process.env.NODE_ENV,
@@ -33,25 +21,58 @@ if (dsn) {
     // CodeGen integration - set via initialScope
     initialScope: {
       tags: {
-        component: "claude-code-ui",
-        platform: "nextjs",
-        codegen: "enabled",
+        component: 'claude-code-ui',
+        platform: 'nextjs-client',
+        codegen: 'enabled',
       },
     },
 
+    integrations: [
+      // Session Replay - only in production and with controlled sampling
+      ...(process.env.NODE_ENV === 'production'
+        ? [
+            Sentry.replayIntegration({
+              // Session Replay
+              maskAllText: true,
+              blockAllMedia: true,
+            }),
+          ]
+        : []),
+    ],
+
+    // Session Replay sampling rates (separate from integration config)
+    replaysSessionSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 0.0,
+    replaysOnErrorSampleRate: 1.0,
+
     // Custom error filtering
     beforeSend(event) {
-      // Filter out non-critical errors in development
+      // Filter out development noise
       if (process.env.NODE_ENV === 'development') {
-        return event;
+        // Skip webpack HMR errors
+        if (event.exception?.values?.[0]?.value?.includes('ChunkLoadError')) {
+          return null;
+        }
+        // Skip localhost connection errors
+        if (event.exception?.values?.[0]?.value?.includes('Failed to fetch')) {
+          return null;
+        }
+      }
+
+      // Add additional context for CodeGen
+      if (event.tags) {
+        event.tags.runtime = 'browser';
+        event.tags.framework = 'nextjs';
       }
 
       return event;
     },
+
+    // Add request context
+    beforeSendTransaction(event) {
+      return event;
+    },
   });
-} else {
-  console.warn('[Sentry] NEXT_PUBLIC_SENTRY_DSN not found, Sentry will not be initialized');
 }
 
-// Export navigation instrumentation - required for router tracking
+// Export navigation instrumentation hook for router tracking
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;

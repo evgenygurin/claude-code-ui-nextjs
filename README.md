@@ -12,7 +12,7 @@ Modern web interface for Claude Code CLI and Cursor CLI built with Next.js 15, p
 Claude Code UI is a comprehensive web application that provides a beautiful, responsive interface for interacting with Claude Code and Cursor CLI tools. Built with modern technologies and best practices, it offers:
 
 - **Real-time AI Chat Interface** - Communicate with Claude and Cursor AI
-- **Integrated Terminal** - Direct CLI access through web browser  
+- **Integrated Terminal** - Direct CLI access through web browser
 - **File Management** - Browse, edit, and manage project files
 - **Git Integration** - Full Git workflow support
 - **Mobile Responsive** - Works perfectly on all devices

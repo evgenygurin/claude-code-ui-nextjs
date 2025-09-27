@@ -44,11 +44,7 @@ next-env.d.ts
 # OS
 Thumbs.db
 
-# Temporary directories (for CI/CD demo)
-/components
-/lib
-/hooks
-/types
+# Note: components, lib, hooks, and types directories are now part of the codebase
 
 # CodeGen automation directories
 .codegen-tasks/

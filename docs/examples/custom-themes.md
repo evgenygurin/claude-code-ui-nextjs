@@ -65,7 +65,7 @@ Create a brand-specific theme:
 ```css
 /* Custom brand theme */
 .theme-brand {
-  --primary: 142 76% 36%;        /* Green primary */
+  --primary: 142 76% 36%; /* Green primary */
   --primary-foreground: 0 0% 100%;
   --secondary: 142 35% 90%;
   --accent: 142 76% 46%;
@@ -75,7 +75,7 @@ Create a brand-specific theme:
 
 /* Purple theme */
 .theme-purple {
-  --primary: 262 83% 58%;        /* Purple primary */
+  --primary: 262 83% 58%; /* Purple primary */
   --primary-foreground: 210 40% 98%;
   --secondary: 262 30% 90%;
   --accent: 262 83% 68%;
@@ -120,7 +120,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     // Apply theme to document
     const root = document.documentElement;
     root.className = root.className.replace(/theme-\w+/g, '');
-    
+
     if (theme === 'dark') {
       root.classList.add('dark');
     } else if (theme !== 'light') {
@@ -241,8 +241,9 @@ Override specific component styles:
 
 /* Custom sidebar */
 .sidebar-custom {
-  background: linear-gradient(180deg, 
-    hsl(var(--background)) 0%, 
+  background: linear-gradient(
+    180deg,
+    hsl(var(--background)) 0%,
     hsl(var(--muted)) 100%
   );
 }
@@ -264,19 +265,19 @@ export interface ThemeColors {
 
 export function generateTheme(baseColor: string): ThemeColors {
   const hsl = hexToHsl(baseColor);
-  
+
   return {
     primary: `${hsl.h} ${hsl.s}% ${hsl.l}%`,
     secondary: `${hsl.h} ${Math.max(hsl.s - 30, 10)}% ${Math.min(hsl.l + 40, 95)}%`,
     accent: `${hsl.h} ${hsl.s}% ${Math.min(hsl.l + 10, 90)}%`,
     background: `0 0% 100%`,
-    foreground: `222.2 84% 4.9%`
+    foreground: `222.2 84% 4.9%`,
   };
 }
 
 export function applyTheme(colors: ThemeColors) {
   const root = document.documentElement;
-  
+
   root.style.setProperty('--primary', colors.primary);
   root.style.setProperty('--secondary', colors.secondary);
   root.style.setProperty('--accent', colors.accent);
@@ -292,16 +293,24 @@ function hexToHsl(hex: string) {
 
   const max = Math.max(r, g, b);
   const min = Math.min(r, g, b);
-  let h = 0, s = 0, l = (max + min) / 2;
+  let h = 0,
+    s = 0,
+    l = (max + min) / 2;
 
   if (max !== min) {
     const d = max - min;
     s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
 
     switch (max) {
-      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-      case g: h = (b - r) / d + 2; break;
-      case b: h = (r - g) / d + 4; break;
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0);
+        break;
+      case g:
+        h = (b - r) / d + 2;
+        break;
+      case b:
+        h = (r - g) / d + 4;
+        break;
     }
     h /= 6;
   }
@@ -309,7 +318,7 @@ function hexToHsl(hex: string) {
   return {
     h: Math.round(h * 360),
     s: Math.round(s * 100),
-    l: Math.round(l * 100)
+    l: Math.round(l * 100),
   };
 }
 ```
@@ -333,13 +342,13 @@ export class ThemeStorage {
   saveTheme(theme: CustomTheme): void {
     const themes = this.getThemes();
     const existingIndex = themes.findIndex(t => t.id === theme.id);
-    
+
     if (existingIndex >= 0) {
       themes[existingIndex] = theme;
     } else {
       themes.push(theme);
     }
-    
+
     localStorage.setItem(this.storageKey, JSON.stringify(themes));
   }
 
@@ -390,14 +399,14 @@ export function ColorPicker() {
 
   const saveTheme = () => {
     if (!themeName) return;
-    
+
     const theme = {
       id: Date.now().toString(),
       name: themeName,
       colors: generateTheme(color),
       created: new Date().toISOString()
     };
-    
+
     // Save theme logic here
     console.log('Saving theme:', theme);
   };
@@ -405,7 +414,7 @@ export function ColorPicker() {
   return (
     <div className="space-y-4 p-4 border rounded-lg">
       <h3 className="font-semibold">Create Custom Theme</h3>
-      
+
       <div className="space-y-2">
         <label className="text-sm font-medium">Primary Color</label>
         <div className="flex gap-2">
@@ -487,7 +496,7 @@ export function ColorPicker() {
 
 ```css
 .theme-ocean {
-  --primary: 199 89% 48%;        /* Ocean blue */
+  --primary: 199 89% 48%; /* Ocean blue */
   --primary-foreground: 0 0% 100%;
   --secondary: 199 20% 92%;
   --accent: 199 89% 58%;
@@ -503,7 +512,7 @@ export function ColorPicker() {
 
 ```css
 .theme-sunset {
-  --primary: 14 91% 60%;         /* Orange */
+  --primary: 14 91% 60%; /* Orange */
   --primary-foreground: 0 0% 100%;
   --secondary: 14 30% 92%;
   --accent: 14 91% 70%;
@@ -523,7 +532,7 @@ export function ColorPicker() {
 // In your dashboard component
 export function Dashboard() {
   const { theme } = useTheme();
-  
+
   return (
     <div className={cn(
       "dashboard-container",
