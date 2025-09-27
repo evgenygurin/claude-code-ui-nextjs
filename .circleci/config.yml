@@ -98,7 +98,7 @@ jobs:
           name: Authenticate with Vercel
           command: |
             echo "🔐 Authenticating with Vercel..."
-            echo "$VERCEL_TOKEN" | vercel login --stdin
+            vercel whoami --token=$VERCEL_TOKEN
             echo "✅ Vercel authentication successful"
       - run:
           name: Deploy to Vercel Preview
@@ -163,7 +163,7 @@ jobs:
           name: Authenticate with Vercel
           command: |
             echo "🔐 Authenticating with Vercel..."
-            echo "$VERCEL_TOKEN" | vercel login --stdin
+            vercel whoami --token=$VERCEL_TOKEN
             echo "✅ Vercel authentication successful"
       - run:
           name: Deploy to Vercel Production

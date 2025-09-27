@@ -156,7 +156,7 @@ jobs:
       - name: Authenticate with Vercel
         run: |
           echo "Authenticating with Vercel..."
-          echo "${{ secrets.VERCEL_TOKEN }}" | vercel login --stdin
+          vercel whoami --token=${{ secrets.VERCEL_TOKEN }}
           echo "✅ Vercel authentication successful"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
@@ -245,7 +245,7 @@ jobs:
       - name: Authenticate with Vercel
         run: |
           echo "Authenticating with Vercel..."
-          echo "${{ secrets.VERCEL_TOKEN }}" | vercel login --stdin
+          vercel whoami --token=${{ secrets.VERCEL_TOKEN }}
           echo "✅ Vercel authentication successful"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

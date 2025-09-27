@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "scope": "team_vQW0xhMJhexCPBThcGxpeSpw",
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/node"
+    }
+  ]
+}
