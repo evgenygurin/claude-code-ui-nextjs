@@ -65,33 +65,6 @@ jobs:
         
         # Run the error handler script (this won't fail the build)
         node scripts/codegen-error-handler.js "$ERROR_TYPE" "$ERROR_DETAILS" || echo "Handler completed"
-        
-    - name: Create GitHub Issue for CodeGen
-      if: failure()
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const errorType = '${{ github.event.inputs.error_type || "ci_failure" }}';
-          const errorDetails = '${{ github.event.inputs.error_details || "CI/CD pipeline failure" }}';
-          const runUrl = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
-          
-          const issueBody = '🚨 Automated CI/CD Failure Report\n\n' +
-            'Error Type: ' + errorType + '\n' +
-            'Error Details: ' + errorDetails + '\n' +
-            'Workflow Run: ' + runUrl + '\n' +
-            'Branch: ${{ github.ref_name }}\n' +
-            'Commit: ${{ github.sha }}\n' +
-            'Timestamp: ' + new Date().toISOString() + '\n\n' +
-            '@codegen Please analyze this CI/CD failure and implement fixes.\n\n' +
-            'This is an automated issue created by the CI/CD error handling system.';
-
-          await github.rest.issues.create({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            title: `🚨 CI/CD Failure: ${errorType} - ${new Date().toISOString().split('T')[0]}`,
-            body: issueBody,
-            labels: ['ci/cd', 'automated', 'codegen', 'bug', 'priority-high']
-          });
 
   check-pending-tasks:
     runs-on: ubuntu-latest
