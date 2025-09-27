@@ -12,37 +12,39 @@ const path = require('path');
 class CodeGenErrorHandler {
   constructor() {
     this.apiKey = process.env.CODEGEN_API_KEY;
-    
+
     // Support both CircleCI and GitHub Actions environment variables
-    this.projectId = process.env.CIRCLE_PROJECT_REPONAME || 
-                     process.env.GITHUB_REPOSITORY?.split('/')[1] ||
-                     'unknown-project';
-    
-    this.buildNumber = process.env.CIRCLE_BUILD_NUM || 
-                       process.env.GITHUB_RUN_NUMBER ||
-                       'local';
-    
-    this.branch = process.env.CIRCLE_BRANCH || 
-                  process.env.GITHUB_REF_NAME ||
-                  'unknown-branch';
-    
-    this.commitSha = process.env.CIRCLE_SHA1 || 
-                     process.env.GITHUB_SHA ||
-                     'unknown-commit';
-    
-    this.jobName = process.env.CIRCLE_JOB || 
-                   process.env.GITHUB_JOB ||
-                   'unknown-job';
-    
-    this.buildUrl = process.env.CIRCLE_BUILD_URL || 
-                    (process.env.GITHUB_SERVER_URL && process.env.GITHUB_REPOSITORY && process.env.GITHUB_RUN_ID
-                      ? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
-                      : 'unknown-url');
+    this.projectId =
+      process.env.CIRCLE_PROJECT_REPONAME ||
+      process.env.GITHUB_REPOSITORY?.split('/')[1] ||
+      'unknown-project';
+
+    this.buildNumber =
+      process.env.CIRCLE_BUILD_NUM || process.env.GITHUB_RUN_NUMBER || 'local';
+
+    this.branch =
+      process.env.CIRCLE_BRANCH ||
+      process.env.GITHUB_REF_NAME ||
+      'unknown-branch';
+
+    this.commitSha =
+      process.env.CIRCLE_SHA1 || process.env.GITHUB_SHA || 'unknown-commit';
+
+    this.jobName =
+      process.env.CIRCLE_JOB || process.env.GITHUB_JOB || 'unknown-job';
+
+    this.buildUrl =
+      process.env.CIRCLE_BUILD_URL ||
+      (process.env.GITHUB_SERVER_URL &&
+      process.env.GITHUB_REPOSITORY &&
+      process.env.GITHUB_RUN_ID
+        ? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
+        : 'unknown-url');
   }
 
   async handleError(errorType, errorDetails) {
     console.log(`🚨 Handling ${errorType} error...`);
-    
+
     const errorReport = {
       timestamp: new Date().toISOString(),
       project: this.projectId,
@@ -53,15 +55,15 @@ class CodeGenErrorHandler {
       buildUrl: this.buildUrl,
       errorType,
       errorDetails,
-      context: await this.gatherContext()
+      context: await this.gatherContext(),
     };
 
     // Save error report locally
     await this.saveErrorReport(errorReport);
-    
+
     // Trigger CodeGen analysis
     await this.triggerCodeGenAnalysis(errorReport);
-    
+
     // Create delayed task for follow-up
     await this.scheduleFollowUpTask(errorReport);
   }
@@ -70,9 +72,11 @@ class CodeGenErrorHandler {
     const context = {
       packageJson: this.readFileIfExists('package.json'),
       circleciConfig: this.readFileIfExists('.circleci/config.yml'),
-      eslintConfig: this.readFileIfExists('.eslintrc.js') || this.readFileIfExists('.eslintrc.json'),
+      eslintConfig:
+        this.readFileIfExists('.eslintrc.js') ||
+        this.readFileIfExists('.eslintrc.json'),
       tsconfig: this.readFileIfExists('tsconfig.json'),
-      recentCommits: await this.getRecentCommits()
+      recentCommits: await this.getRecentCommits(),
     };
 
     return context;
@@ -87,7 +91,7 @@ class CodeGenErrorHandler {
   }
 
   async getRecentCommits() {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const { exec } = require('child_process');
       exec('git log --oneline -10', (error, stdout) => {
         resolve(error ? 'Unable to get commits' : stdout);
@@ -103,19 +107,19 @@ class CodeGenErrorHandler {
 
     const reportFile = path.join(reportDir, `error-${Date.now()}.json`);
     fs.writeFileSync(reportFile, JSON.stringify(errorReport, null, 2));
-    
+
     console.log(`📝 Error report saved: ${reportFile}`);
   }
 
   async triggerCodeGenAnalysis(errorReport) {
     const analysisPrompt = this.generateAnalysisPrompt(errorReport);
-    
+
     console.log('🤖 Triggering CodeGen analysis...');
     console.log(`Analysis prompt: ${analysisPrompt}`);
 
     // This would normally make an API call to CodeGen service
     // For now, we'll create a webhook or GitHub comment
-    
+
     if (process.env.GITHUB_TOKEN) {
       await this.createGitHubComment(analysisPrompt, errorReport);
     }
@@ -125,13 +129,14 @@ class CodeGenErrorHandler {
   }
 
   generateAnalysisPrompt(errorReport) {
-    const isPostMergeIssue = errorReport.errorType.includes('post_merge') || 
-                            errorReport.errorType.includes('health');
-    
+    const isPostMergeIssue =
+      errorReport.errorType.includes('post_merge') ||
+      errorReport.errorType.includes('health');
+
     if (isPostMergeIssue) {
       return this.generatePostMergeAnalysisPrompt(errorReport);
     }
-    
+
     return `🚨 CI/CD Failure detected in ${errorReport.project}
 
 **Error Details:**
@@ -221,18 +226,32 @@ Please treat this as a HIGH PRIORITY post-merge incident requiring immediate att
   }
 
   extractIssueTypes(errorDetails) {
-    const commonIssues = ['linting', 'type_checking', 'tests', 'build', 'security'];
-    const detectedIssues = commonIssues.filter(issue => 
+    const commonIssues = [
+      'linting',
+      'type_checking',
+      'tests',
+      'build',
+      'security',
+    ];
+    const detectedIssues = commonIssues.filter(issue =>
       errorDetails.toLowerCase().includes(issue.replace('_', ' '))
     );
-    return detectedIssues.length > 0 ? detectedIssues.join(', ') : 'system degradation';
+    return detectedIssues.length > 0
+      ? detectedIssues.join(', ')
+      : 'system degradation';
   }
 
   determineEscalationLevel(errorType) {
-    if (errorType.includes('critical') || errorType.includes('new_critical_issues')) {
+    if (
+      errorType.includes('critical') ||
+      errorType.includes('new_critical_issues')
+    ) {
       return 'CRITICAL - Immediate Action Required';
     }
-    if (errorType.includes('significant') || errorType.includes('degradation')) {
+    if (
+      errorType.includes('significant') ||
+      errorType.includes('degradation')
+    ) {
       return 'HIGH - Urgent Attention Needed';
     }
     if (errorType.includes('trend') || errorType.includes('preventive')) {
@@ -265,7 +284,7 @@ Please treat this as a HIGH PRIORITY post-merge incident requiring immediate att
         3. Run tests and quality checks
         4. Update the PR
         5. Schedule another follow-up if needed
-      `
+      `,
     };
 
     // Save the follow-up task
@@ -276,7 +295,7 @@ Please treat this as a HIGH PRIORITY post-merge incident requiring immediate att
 
     const taskFile = path.join(tasksDir, `${taskId}.json`);
     fs.writeFileSync(taskFile, JSON.stringify(followUpTask, null, 2));
-    
+
     console.log(`⏰ Follow-up task scheduled: ${taskFile}`);
     console.log(`📅 Will check again at: ${followUpTask.scheduledFor}`);
   }
@@ -286,14 +305,15 @@ Please treat this as a HIGH PRIORITY post-merge incident requiring immediate att
 if (require.main === module) {
   const errorType = process.argv[2] || 'unknown';
   const errorDetails = process.argv[3] || 'No details provided';
-  
+
   const handler = new CodeGenErrorHandler();
-  handler.handleError(errorType, errorDetails)
+  handler
+    .handleError(errorType, errorDetails)
     .then(() => {
       console.log('✅ Error handling completed');
       process.exit(0);
     })
-    .catch((error) => {
+    .catch(error => {
       console.error('❌ Error handling failed:', error);
       process.exit(1);
     });

@@ -6,7 +6,8 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Claude Code UI',
-  description: 'Modern web interface for Claude Code CLI and Cursor CLI built with Next.js',
+  description:
+    'Modern web interface for Claude Code CLI and Cursor CLI built with Next.js',
   keywords: ['claude', 'cursor', 'ai', 'code', 'ui', 'nextjs', 'vercel'],
   authors: [{ name: 'Claude Code UI Contributors' }],
   creator: 'Claude Code UI Contributors',

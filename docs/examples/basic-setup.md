@@ -117,19 +117,23 @@ Once you're comfortable with the basics, explore:
 ### Common Issues
 
 **Port 3000 already in use:**
+
 ```bash
 PORT=3001 npm run dev
 ```
 
 **Authentication not working:**
+
 - Check your `NEXTAUTH_SECRET` is set
 - Verify `NEXTAUTH_URL` matches your development URL
 
 **Claude API not responding:**
+
 - Verify your `CLAUDE_API_KEY` is correct
 - Check your Anthropic Console for API usage limits
 
 **Terminal commands not working:**
+
 - Terminal commands are simulated in development
 - For real command execution, integrate with actual CLI tools
 

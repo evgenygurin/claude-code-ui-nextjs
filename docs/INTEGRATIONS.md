@@ -4,17 +4,18 @@ Complete integration setup for Claude Code UI with GitHub, CircleCI, Sentry, and
 
 ## 📊 Integration Status
 
-| Service | Status | Configuration | Links |
-|---------|--------|---------------|-------|
-| **GitHub** | ✅ Complete | Repository connected | [claude-code-ui-nextjs](https://github.com/evgenygurin/claude-code-ui-nextjs) |
-| **CircleCI** | ✅ Complete | Full CI/CD pipeline | Project: `gh/evgenygurin/claude-code-ui-nextjs` |
-| **Sentry** | ✅ Complete | Error tracking active | [evgeny-pl/claude-code-ui-nextjs](https://us.sentry.io/organizations/evgeny-pl/projects/claude-code-ui-nextjs/) |
-| **Linear** | ✅ Complete | Project management setup | [CodeGen Integration Project](https://linear.app/claude-code-bot/project/codegen-integration-claude-code-ui-69ca1373eb69) |
-| **CodeGen** | 🔄 Pending | API integration needed | Documentation: [docs.codegen.com](https://docs.codegen.com/llms.txt) |
+| Service      | Status      | Configuration            | Links                                                                                                                     |
+| ------------ | ----------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| **GitHub**   | ✅ Complete | Repository connected     | [claude-code-ui-nextjs](https://github.com/evgenygurin/claude-code-ui-nextjs)                                             |
+| **CircleCI** | ✅ Complete | Full CI/CD pipeline      | Project: `gh/evgenygurin/claude-code-ui-nextjs`                                                                           |
+| **Sentry**   | ✅ Complete | Error tracking active    | [evgeny-pl/claude-code-ui-nextjs](https://us.sentry.io/organizations/evgeny-pl/projects/claude-code-ui-nextjs/)           |
+| **Linear**   | ✅ Complete | Project management setup | [CodeGen Integration Project](https://linear.app/claude-code-bot/project/codegen-integration-claude-code-ui-69ca1373eb69) |
+| **CodeGen**  | 🔄 Pending  | API integration needed   | Documentation: [docs.codegen.com](https://docs.codegen.com/llms.txt)                                                      |
 
 ## ✅ Successfully Configured Integrations
 
 ### 1. **CircleCI** - Continuous Integration/Deployment
+
 - **Config**: `.circleci/config.yml`
 - **Features**:
   - Automated testing on every push
@@ -24,6 +25,7 @@ Complete integration setup for Claude Code UI with GitHub, CircleCI, Sentry, and
   - Dependency caching for fast builds
 
 ### 2. **Vercel** - Hosting & Deployment
+
 - **URL**: https://claude-code-panel-1.vercel.app/
 - **Config**: `vercel.json`
 - **Features**:
@@ -33,6 +35,7 @@ Complete integration setup for Claude Code UI with GitHub, CircleCI, Sentry, and
   - Environment variable management
 
 ### 3. **Sentry** - Error Tracking & Monitoring
+
 - **Config Files**:
   - `instrumentation.ts` - Server-side initialization
   - `sentry.client.config.ts` - Client-side initialization
@@ -47,6 +50,7 @@ Complete integration setup for Claude Code UI with GitHub, CircleCI, Sentry, and
 - **Test Page**: https://claude-code-panel-1.vercel.app/sentry-test
 
 ### 4. **MCP Servers** - Claude Desktop Integration
+
 - **Config**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - **Servers**:
   - **Sentry MCP** - AI-powered error analysis and auto-fixes
@@ -56,6 +60,7 @@ Complete integration setup for Claude Code UI with GitHub, CircleCI, Sentry, and
 ## 🚀 Workflow
 
 ### Development Flow
+
 1. Make changes locally
 2. Push to GitHub
 3. CircleCI runs tests automatically
@@ -64,6 +69,7 @@ Complete integration setup for Claude Code UI with GitHub, CircleCI, Sentry, and
 6. Sentry monitors for errors in production
 
 ### Error Monitoring Flow
+
 1. Errors occur in production
 2. Sentry captures and groups errors
 3. CodeGen analyzes errors (if configured)
@@ -74,6 +80,7 @@ Complete integration setup for Claude Code UI with GitHub, CircleCI, Sentry, and
 ## 🔧 Verification
 
 Run the verification script to check all integrations:
+
 ```bash
 ./scripts/verify-integrations.sh
 ```
@@ -87,6 +94,7 @@ Run the verification script to check all integrations:
 ## 🔑 Environment Variables
 
 Required in Vercel dashboard:
+
 - `NEXT_PUBLIC_SENTRY_DSN` - Sentry project DSN
 - `SENTRY_AUTH_TOKEN` - For source map uploads
 - `VERCEL_GIT_COMMIT_SHA` - Automatic from Vercel
