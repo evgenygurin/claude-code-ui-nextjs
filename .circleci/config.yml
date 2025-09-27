@@ -72,9 +72,34 @@ jobs:
       - attach_workspace:
           at: ~/project
       - run:
+          name: Check Auth Tokens
+          command: |
+            echo "🔍 Checking authentication tokens..."
+            node scripts/check-auth-tokens.js
+          environment:
+            VERCEL_TOKEN: $VERCEL_TOKEN
+            VERCEL_ORG_ID: $VERCEL_ORG_ID
+            VERCEL_PROJECT_ID: $VERCEL_PROJECT_ID
+      - run:
+          name: Setup Vercel Configuration
+          command: |
+            echo "Setting up Vercel configuration..."
+            mkdir -p .vercel
+            echo "{
+              \"projectId\": \"$VERCEL_PROJECT_ID\",
+              \"orgId\": \"$VERCEL_ORG_ID\"
+            }" > .vercel/project.json
+            echo "✅ Vercel configuration created successfully"
+      - run:
           name: Install Vercel CLI
           no_output_timeout: 5m
           command: npm install -g vercel@latest
+      - run:
+          name: Authenticate with Vercel
+          command: |
+            echo "🔐 Authenticating with Vercel..."
+            echo "$VERCEL_TOKEN" | vercel login --stdin
+            echo "✅ Vercel authentication successful"
       - run:
           name: Deploy to Vercel Preview
           no_output_timeout: 20m
@@ -83,16 +108,26 @@ jobs:
               echo "🚀 Deploying preview for PR ${CIRCLE_PULL_REQUEST}"
               
               # Pull Vercel project configuration
+              echo "📥 Pulling Vercel environment information..."
               vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
               
               # Skip Vercel build since we already built in previous step
               # Use the prebuilt .next directory from workspace
-              vercel deploy --prebuilt --token=$VERCEL_TOKEN > deployment-url.txt
+              echo "🚀 Deploying to Vercel..."
+              vercel deploy --prebuilt --token=$VERCEL_TOKEN > deployment-url.txt 2>&1
               
               # Output the deployment URL
-              echo "✅ Preview URL: $(cat deployment-url.txt)"
+              deployment_url=$(cat deployment-url.txt | grep -o 'https://[^ ]*\.vercel\.app' | head -1)
+              if [ -n "$deployment_url" ]; then
+                echo "✅ Preview URL: $deployment_url"
+                echo "export PREVIEW_URL='$deployment_url'" >> $BASH_ENV
+              else
+                echo "❌ Failed to extract deployment URL from output:"
+                cat deployment-url.txt
+                exit 1
+              fi
             else
-              echo "Not a PR, skipping preview deployment"
+              echo "ℹ️  Not a PR, skipping preview deployment"
             fi
 
   deploy_production:
@@ -101,9 +136,35 @@ jobs:
       - attach_workspace:
           at: ~/project
       - run:
+          name: Check Auth Tokens
+          command: |
+            echo "🔍 Checking authentication tokens..."
+            node scripts/check-auth-tokens.js
+          environment:
+            VERCEL_TOKEN: $VERCEL_TOKEN
+            VERCEL_ORG_ID: $VERCEL_ORG_ID
+            VERCEL_PROJECT_ID: $VERCEL_PROJECT_ID
+            SENTRY_AUTH_TOKEN: $SENTRY_AUTH_TOKEN
+      - run:
+          name: Setup Vercel Configuration
+          command: |
+            echo "Setting up Vercel configuration..."
+            mkdir -p .vercel
+            echo "{
+              \"projectId\": \"$VERCEL_PROJECT_ID\",
+              \"orgId\": \"$VERCEL_ORG_ID\"
+            }" > .vercel/project.json
+            echo "✅ Vercel configuration created successfully"
+      - run:
           name: Install Vercel CLI
           no_output_timeout: 5m
           command: npm install -g vercel@latest
+      - run:
+          name: Authenticate with Vercel
+          command: |
+            echo "🔐 Authenticating with Vercel..."
+            echo "$VERCEL_TOKEN" | vercel login --stdin
+            echo "✅ Vercel authentication successful"
       - run:
           name: Deploy to Vercel Production
           no_output_timeout: 20m
@@ -111,14 +172,24 @@ jobs:
             echo "🚀 Deploying to production"
             
             # Pull Vercel project configuration
+            echo "📥 Pulling Vercel production environment..."
             vercel pull --yes --environment=production --token=$VERCEL_TOKEN
             
             # Skip Vercel build since we already built in previous step
             # Use the prebuilt .next directory from workspace
-            vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN > deployment-url.txt
+            echo "🚀 Deploying to production..."
+            vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN > deployment-url.txt 2>&1
             
             # Output the deployment URL
-            echo "✅ Production URL: $(cat deployment-url.txt)"
+            deployment_url=$(cat deployment-url.txt | grep -o 'https://[^ ]*\.vercel\.app\|https://[^ ]*\.com' | head -1)
+            if [ -n "$deployment_url" ]; then
+              echo "✅ Production URL: $deployment_url"
+              echo "export PRODUCTION_URL='$deployment_url'" >> $BASH_ENV
+            else
+              echo "❌ Failed to extract deployment URL from output:"
+              cat deployment-url.txt
+              exit 1
+            fi
 
   security_scan:
     executor: node-executor

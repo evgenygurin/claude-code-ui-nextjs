@@ -20,7 +20,12 @@
     "format:check": "prettier --check .",
     "codegen:schedule": "node scripts/task-scheduler.js schedule",
     "codegen:check": "node scripts/task-scheduler.js check",
-    "codegen:cleanup": "node scripts/task-scheduler.js cleanup"
+    "codegen:cleanup": "node scripts/task-scheduler.js cleanup",
+    "auth:check": "node scripts/check-auth-tokens.js",
+    "auth:setup": "node scripts/setup-vercel-config.js",
+    "auth:monitor": "node scripts/auth-monitor.js check",
+    "auth:monitor:continuous": "node scripts/auth-monitor.js monitor",
+    "auth:status": "node scripts/auth-monitor.js status"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",

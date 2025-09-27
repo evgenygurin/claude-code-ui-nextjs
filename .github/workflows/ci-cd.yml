@@ -129,21 +129,62 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check Auth Tokens
+        run: node scripts/check-auth-tokens.js
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Vercel Configuration
+        run: |
+          echo "Setting up Vercel configuration..."
+          echo '{
+            "projectId": "${{ secrets.VERCEL_PROJECT_ID }}",
+            "orgId": "${{ secrets.VERCEL_ORG_ID }}"
+          }' > .vercel/project.json
+          mkdir -p .vercel
+          echo "Vercel configuration created successfully"
+
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
+      - name: Authenticate with Vercel
+        run: |
+          echo "Authenticating with Vercel..."
+          echo "${{ secrets.VERCEL_TOKEN }}" | vercel login --stdin
+          echo "✅ Vercel authentication successful"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
       - name: Pull Vercel Environment Information
-        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        run: |
+          echo "Pulling Vercel environment information..."
+          vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+          echo "✅ Environment information pulled successfully"
 
       - name: Build Project Artifacts
-        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        run: |
+          echo "Building project artifacts..."
+          vercel build --token=${{ secrets.VERCEL_TOKEN }}
+          echo "✅ Build completed successfully"
 
       - name: Deploy Project Artifacts to Vercel
         id: deploy
         run: |
-          url=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "Deploying to Vercel preview..."
+          url=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} 2>&1 | grep -o 'https://[^ ]*\.vercel\.app' | head -1)
+          if [ -z "$url" ]; then
+            echo "❌ Failed to extract deployment URL"
+            exit 1
+          fi
           echo "url=$url" >> $GITHUB_OUTPUT
           echo "::notice::Preview deployed to $url"
+          echo "✅ Preview deployment successful: $url"
 
       - name: Comment PR with preview URL
         uses: actions/github-script@v7
@@ -176,21 +217,63 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check Auth Tokens
+        run: node scripts/check-auth-tokens.js
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
+      - name: Setup Vercel Configuration
+        run: |
+          echo "Setting up Vercel configuration..."
+          mkdir -p .vercel
+          echo '{
+            "projectId": "${{ secrets.VERCEL_PROJECT_ID }}",
+            "orgId": "${{ secrets.VERCEL_ORG_ID }}"
+          }' > .vercel/project.json
+          echo "Vercel configuration created successfully"
+
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
+      - name: Authenticate with Vercel
+        run: |
+          echo "Authenticating with Vercel..."
+          echo "${{ secrets.VERCEL_TOKEN }}" | vercel login --stdin
+          echo "✅ Vercel authentication successful"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
       - name: Pull Vercel Environment Information
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        run: |
+          echo "Pulling Vercel production environment..."
+          vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+          echo "✅ Production environment information pulled successfully"
 
       - name: Build Project Artifacts
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        run: |
+          echo "Building production artifacts..."
+          vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+          echo "✅ Production build completed successfully"
 
       - name: Deploy Project Artifacts to Vercel
         id: deploy
         run: |
-          url=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "Deploying to Vercel production..."
+          url=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }} 2>&1 | grep -o 'https://[^ ]*\.vercel\.app\|https://[^ ]*\.com' | head -1)
+          if [ -z "$url" ]; then
+            echo "❌ Failed to extract deployment URL"
+            exit 1
+          fi
           echo "url=$url" >> $GITHUB_OUTPUT
           echo "::notice::Production deployed to $url"
+          echo "✅ Production deployment successful: $url"
 
       - name: Create deployment status
         uses: actions/github-script@v7

@@ -49,3 +49,7 @@ Thumbs.db
 # CodeGen automation directories
 .codegen-tasks/
 .codegen-reports/
+
+# Auth monitoring data
+.auth-monitoring.json
+.health-monitoring/
