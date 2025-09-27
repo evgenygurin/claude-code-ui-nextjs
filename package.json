@@ -20,7 +20,12 @@
     "format:check": "prettier --check .",
     "codegen:schedule": "node scripts/task-scheduler.js schedule",
     "codegen:check": "node scripts/task-scheduler.js check",
-    "codegen:cleanup": "node scripts/task-scheduler.js cleanup"
+    "codegen:cleanup": "node scripts/task-scheduler.js cleanup",
+    "merge:resolve": "node scripts/merge-conflict-resolver.js",
+    "merge:resolve-dry": "node scripts/merge-conflict-resolver.js --dry-run --verbose",
+    "merge:monitor": "node scripts/merge-monitor.js",
+    "merge:monitor-verbose": "node scripts/merge-monitor.js --log-level=debug",
+    "merge:test": "npm run test -- tests/merge-conflicts/"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",
