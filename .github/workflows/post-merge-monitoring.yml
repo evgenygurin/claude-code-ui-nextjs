@@ -55,7 +55,9 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          # Try npm ci first, fall back to npm install --ignore-scripts if compilation fails
+          npm ci || npm install --ignore-scripts
 
       - name: Initialize health monitoring
         run: |
@@ -279,7 +281,9 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          # Try npm ci first, fall back to npm install --ignore-scripts if compilation fails
+          npm ci || npm install --ignore-scripts
 
       - name: Trigger CodeGen analysis
         run: |
@@ -375,7 +379,9 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          # Try npm ci first, fall back to npm install --ignore-scripts if compilation fails
+          npm ci || npm install --ignore-scripts
 
       - name: Configure long-term monitoring
         run: |
