@@ -6,7 +6,7 @@ orbs:
 executors:
   node-executor:
     docker:
-      - image: cimg/node:20.10
+      - image: cimg/node:20.18
     working_directory: ~/project
 
 jobs:
@@ -14,17 +14,27 @@ jobs:
     executor: node-executor
     steps:
       - checkout
+      - run:
+          name: Debug Environment
+          command: |
+            echo "Node version: $(node --version)"
+            echo "NPM version: $(npm --version)"
+            echo "Working directory: $(pwd)"
+            ls -la
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "package-lock.json" }}
-            - v1-dependencies-
+            - v2-dependencies-{{ checksum "package-lock.json" }}
+            - v2-dependencies-
       - run:
           name: Install Dependencies
-          command: npm ci
+          command: |
+            echo "Installing dependencies with npm ci..."
+            npm ci --verbose
+            echo "Dependencies installed successfully"
       - save_cache:
           paths:
             - node_modules
-          key: v1-dependencies-{{ checksum "package-lock.json" }}
+          key: v2-dependencies-{{ checksum "package-lock.json" }}
       - persist_to_workspace:
           root: ~/project
           paths:
