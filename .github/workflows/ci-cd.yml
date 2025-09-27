@@ -132,6 +132,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Setup Vercel Configuration
+        run: |
+          echo "Setting up Vercel configuration..."
+          mkdir -p .vercel
+          echo '{
+            "projectId": "${{ secrets.VERCEL_PROJECT_ID }}",
+            "orgId": "${{ secrets.VERCEL_ORG_ID }}"
+          }' > .vercel/project.json
+          echo "Vercel configuration created successfully"
+
       - name: Check Auth Tokens
         run: node scripts/check-auth-tokens.js
         env:
@@ -139,19 +152,6 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Setup Vercel Configuration
-        run: |
-          echo "Setting up Vercel configuration..."
-          echo '{
-            "projectId": "${{ secrets.VERCEL_PROJECT_ID }}",
-            "orgId": "${{ secrets.VERCEL_ORG_ID }}"
-          }' > .vercel/project.json
-          mkdir -p .vercel
-          echo "Vercel configuration created successfully"
-
-      - name: Install Vercel CLI
-        run: npm install --global vercel@latest
 
       - name: Authenticate with Vercel
         run: |
@@ -220,14 +220,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Check Auth Tokens
-        run: node scripts/check-auth-tokens.js
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
 
       - name: Setup Vercel Configuration
         run: |
@@ -239,8 +233,14 @@ jobs:
           }' > .vercel/project.json
           echo "Vercel configuration created successfully"
 
-      - name: Install Vercel CLI
-        run: npm install --global vercel@latest
+      - name: Check Auth Tokens
+        run: node scripts/check-auth-tokens.js
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
       - name: Authenticate with Vercel
         run: |

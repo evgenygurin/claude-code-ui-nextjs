@@ -72,14 +72,9 @@ jobs:
       - attach_workspace:
           at: ~/project
       - run:
-          name: Check Auth Tokens
-          command: |
-            echo "🔍 Checking authentication tokens..."
-            node scripts/check-auth-tokens.js
-          environment:
-            VERCEL_TOKEN: $VERCEL_TOKEN
-            VERCEL_ORG_ID: $VERCEL_ORG_ID
-            VERCEL_PROJECT_ID: $VERCEL_PROJECT_ID
+          name: Install Vercel CLI
+          no_output_timeout: 5m
+          command: npm install -g vercel@latest
       - run:
           name: Setup Vercel Configuration
           command: |
@@ -91,9 +86,14 @@ jobs:
             }" > .vercel/project.json
             echo "✅ Vercel configuration created successfully"
       - run:
-          name: Install Vercel CLI
-          no_output_timeout: 5m
-          command: npm install -g vercel@latest
+          name: Check Auth Tokens
+          command: |
+            echo "🔍 Checking authentication tokens..."
+            node scripts/check-auth-tokens.js
+          environment:
+            VERCEL_TOKEN: $VERCEL_TOKEN
+            VERCEL_ORG_ID: $VERCEL_ORG_ID
+            VERCEL_PROJECT_ID: $VERCEL_PROJECT_ID
       - run:
           name: Authenticate with Vercel
           command: |
@@ -136,15 +136,9 @@ jobs:
       - attach_workspace:
           at: ~/project
       - run:
-          name: Check Auth Tokens
-          command: |
-            echo "🔍 Checking authentication tokens..."
-            node scripts/check-auth-tokens.js
-          environment:
-            VERCEL_TOKEN: $VERCEL_TOKEN
-            VERCEL_ORG_ID: $VERCEL_ORG_ID
-            VERCEL_PROJECT_ID: $VERCEL_PROJECT_ID
-            SENTRY_AUTH_TOKEN: $SENTRY_AUTH_TOKEN
+          name: Install Vercel CLI
+          no_output_timeout: 5m
+          command: npm install -g vercel@latest
       - run:
           name: Setup Vercel Configuration
           command: |
@@ -156,9 +150,15 @@ jobs:
             }" > .vercel/project.json
             echo "✅ Vercel configuration created successfully"
       - run:
-          name: Install Vercel CLI
-          no_output_timeout: 5m
-          command: npm install -g vercel@latest
+          name: Check Auth Tokens
+          command: |
+            echo "🔍 Checking authentication tokens..."
+            node scripts/check-auth-tokens.js
+          environment:
+            VERCEL_TOKEN: $VERCEL_TOKEN
+            VERCEL_ORG_ID: $VERCEL_ORG_ID
+            VERCEL_PROJECT_ID: $VERCEL_PROJECT_ID
+            SENTRY_AUTH_TOKEN: $SENTRY_AUTH_TOKEN
       - run:
           name: Authenticate with Vercel
           command: |

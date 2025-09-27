@@ -14,15 +14,19 @@ class AuthTokenChecker {
       'VERCEL_TOKEN',
       'VERCEL_ORG_ID', 
       'VERCEL_PROJECT_ID',
-      'CODECOV_TOKEN',
-      'SENTRY_AUTH_TOKEN',
       'GITHUB_TOKEN'
+    ];
+    
+    this.optionalTokens = [
+      'CODECOV_TOKEN',
+      'SENTRY_AUTH_TOKEN'
     ];
     
     this.results = {
       passed: [],
       failed: [],
-      warnings: []
+      warnings: [],
+      optional: []
     };
   }
 
@@ -206,7 +210,7 @@ class AuthTokenChecker {
     this.log('', 'info');
 
     // Проверка основных переменных окружения
-    this.log('📋 Проверка переменных окружения:', 'info');
+    this.log('📋 Проверка обязательных переменных окружения:', 'info');
     for (const tokenName of this.requiredTokens) {
       const result = await this.checkTokenExists(tokenName);
       if (result.valid) {
@@ -219,17 +223,28 @@ class AuthTokenChecker {
     }
 
     this.log('', 'info');
+    this.log('📋 Проверка дополнительных переменных окружения:', 'info');
+    for (const tokenName of this.optionalTokens) {
+      const result = await this.checkTokenExists(tokenName);
+      if (result.valid) {
+        this.log(`✅ ${tokenName}: найден (${result.token})`, 'success');
+        this.results.optional.push(tokenName);
+      } else {
+        this.log(`⚠️  ${tokenName}: ${result.error} (необязательно)`, 'warning');
+        this.results.warnings.push(`${tokenName}: ${result.error} (необязательно)`);
+      }
+    }
+
+    this.log('', 'info');
     this.log('🌐 Проверка API токенов:', 'info');
 
-    // Детальная проверка токенов
-    const apiChecks = [
+    // Детальная проверка обязательных токенов
+    const requiredApiChecks = [
       { name: 'Vercel API', check: this.checkVercelToken.bind(this) },
-      { name: 'GitHub API', check: this.checkGitHubToken.bind(this) },
-      { name: 'Sentry API', check: this.checkSentryToken.bind(this) },
-      { name: 'Codecov Token', check: this.checkCodecovToken.bind(this) }
+      { name: 'GitHub API', check: this.checkGitHubToken.bind(this) }
     ];
 
-    for (const { name, check } of apiChecks) {
+    for (const { name, check } of requiredApiChecks) {
       try {
         const result = await check();
         if (result.valid) {
@@ -239,8 +254,29 @@ class AuthTokenChecker {
           this.results.failed.push(`${name}: ${result.error}`);
         }
       } catch (error) {
-        this.log(`⚠️  ${name}: Ошибка проверки - ${error.message}`, 'warning');
-        this.results.warnings.push(`${name}: ${error.message}`);
+        this.log(`❌ ${name}: Ошибка проверки - ${error.message}`, 'error');
+        this.results.failed.push(`${name}: ${error.message}`);
+      }
+    }
+
+    // Проверка дополнительных API (не блокирует CI/CD)
+    const optionalApiChecks = [
+      { name: 'Sentry API', check: this.checkSentryToken.bind(this) },
+      { name: 'Codecov Token', check: this.checkCodecovToken.bind(this) }
+    ];
+
+    for (const { name, check } of optionalApiChecks) {
+      try {
+        const result = await check();
+        if (result.valid) {
+          this.log(`✅ ${name}: ${result.info || 'OK'}`, 'success');
+        } else {
+          this.log(`⚠️  ${name}: ${result.error} (необязательно)`, 'warning');
+          this.results.warnings.push(`${name}: ${result.error} (необязательно)`);
+        }
+      } catch (error) {
+        this.log(`⚠️  ${name}: Ошибка проверки - ${error.message} (необязательно)`, 'warning');
+        this.results.warnings.push(`${name}: ${error.message} (необязательно)`);
       }
     }
 
@@ -252,8 +288,8 @@ class AuthTokenChecker {
     if (cliResult.valid) {
       this.log(`✅ ${cliResult.info}`, 'success');
     } else {
-      this.log(`❌ ${cliResult.error}`, 'error');
-      this.results.failed.push(`Vercel CLI: ${cliResult.error}`);
+      this.log(`⚠️  ${cliResult.error}`, 'warning');
+      this.results.warnings.push(`Vercel CLI: ${cliResult.error}`);
     }
 
     // Итоговый отчет
@@ -266,26 +302,39 @@ class AuthTokenChecker {
   printSummary() {
     this.log('', 'info');
     this.log('📊 Итоговый отчет:', 'info');
-    this.log(`✅ Успешно: ${this.results.passed.length}`, 'success');
+    this.log(`✅ Обязательные токены: ${this.results.passed.length}`, 'success');
+    this.log(`✅ Дополнительные токены: ${this.results.optional.length}`, 'success');
     this.log(`⚠️  Предупреждения: ${this.results.warnings.length}`, 'warning');
-    this.log(`❌ Ошибки: ${this.results.failed.length}`, 'error');
+    this.log(`❌ Критические ошибки: ${this.results.failed.length}`, 'error');
+
+    if (this.results.warnings.length > 0) {
+      this.log('', 'info');
+      this.log('⚠️  Предупреждения (не блокируют CI/CD):', 'warning');
+      this.results.warnings.forEach(warning => {
+        this.log(`   - ${warning}`, 'warning');
+      });
+    }
 
     if (this.results.failed.length > 0) {
       this.log('', 'info');
-      this.log('🚨 Найденные проблемы:', 'error');
+      this.log('🚨 Критические проблемы (блокируют CI/CD):', 'error');
       this.results.failed.forEach(error => {
         this.log(`   - ${error}`, 'error');
       });
       
       this.log('', 'info');
-      this.log('💡 Рекомендации:', 'warning');
-      this.log('   1. Проверьте наличие всех секретов в настройках CI/CD', 'warning');
+      this.log('💡 Рекомендации по исправлению:', 'warning');
+      this.log('   1. Проверьте наличие всех обязательных секретов в настройках CI/CD', 'warning');
       this.log('   2. Убедитесь, что токены не истекли', 'warning');
       this.log('   3. Проверьте права доступа для токенов', 'warning');
-      this.log('   4. Установите Vercel CLI если он отсутствует', 'warning');
+      this.log('   4. Для Vercel убедитесь, что токен имеет доступ к организации и проекту', 'warning');
     } else {
       this.log('', 'info');
-      this.log('🎉 Все проверки пройдены! CI/CD должен работать без ручного логина.', 'success');
+      this.log('🎉 Все обязательные проверки пройдены! CI/CD должен работать без ручного логина.', 'success');
+      
+      if (this.results.warnings.length > 0) {
+        this.log('ℹ️  Дополнительные функции могут быть недоступны из-за предупреждений выше.', 'info');
+      }
     }
   }
 }
