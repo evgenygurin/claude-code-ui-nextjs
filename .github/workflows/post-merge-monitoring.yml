@@ -330,56 +330,60 @@ jobs:
           const healthStatus = '${{ needs.post-merge-health-check.outputs.health-status }}';
           const healthScore = '${{ needs.post-merge-health-check.outputs.health-score }}';
           const issues = '${{ needs.post-merge-health-check.outputs.issues-detected }}';
-          const runUrl = `${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`;
+          const runUrl = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
+          const branch = '${{ github.ref_name || github.head_ref || "unknown" }}';
+          const commit = '${{ github.sha }}';
           
-          const issueBody = `🚨 **Critical Post-Merge Health Issues Detected**
-
-**Health Assessment Results:**
-- **Status:** ${healthStatus.toUpperCase()}
-- **Health Score:** ${healthScore}/100
-- **Issues Detected:** ${issues || 'None specified'}
-- **Monitoring Run:** [${runUrl}](${runUrl})
-- **Branch:** ${{ github.ref_name || github.head_ref || 'unknown' }}
-- **Commit:** ${{ github.sha }}
-- **Timestamp:** ${new Date().toISOString()}
-
----
-
-@codegen **CRITICAL INTERVENTION REQUIRED**
-
-## 🎯 Required Actions:
-1. **🔍 Immediate Analysis:** Review the health monitoring results and identify root causes
-2. **🛠️ Fix Critical Issues:** Address all failing components (build, tests, type-checking)
-3. **🧪 Comprehensive Testing:** Ensure all fixes are properly tested
-4. **📋 Quality Assurance:** Verify that the health score returns to >90
-5. **📝 Documentation:** Document any significant changes or fixes applied
-6. **🔄 Follow-up Monitoring:** Schedule additional health checks to prevent regression
-
-## 📊 Context:
-- **Project:** Claude Code UI (Next.js 15)
-- **Monitoring System:** Post-merge health assessment
-- **CI/CD Platform:** GitHub Actions + CircleCI
-- **Health Threshold:** Critical issues require immediate attention
-- **Auto-remediation:** Enabled via CodeGen integration
-
-## 🚨 Escalation Rules:
-- If this issue is not resolved within 2 hours, additional escalation will be triggered
-- Critical health status requires immediate attention to prevent production issues
-- System will continue monitoring and creating follow-up tasks until resolution
-
-## 📈 Success Criteria:
-- [ ] All CI/CD checks passing
-- [ ] Health score ≥ 90/100
-- [ ] No critical issues remaining
-- [ ] Comprehensive test coverage maintained
-- [ ] Build and deployment systems operational
-
-**This is an automated critical alert from the Post-Merge Health Monitoring System.**`;
+          const issueBody = [
+            '🚨 **Critical Post-Merge Health Issues Detected**',
+            '',
+            '**Health Assessment Results:**',
+            '- **Status:** ' + (healthStatus ? healthStatus.toUpperCase() : 'UNKNOWN'),
+            '- **Health Score:** ' + healthScore + '/100',
+            '- **Issues Detected:** ' + (issues || 'None specified'),
+            '- **Monitoring Run:** [' + runUrl + '](' + runUrl + ')',
+            '- **Branch:** ' + branch,
+            '- **Commit:** ' + commit,
+            '- **Timestamp:** ' + new Date().toISOString(),
+            '',
+            '---',
+            '',
+            '@codegen **CRITICAL INTERVENTION REQUIRED**',
+            '',
+            '## 🎯 Required Actions:',
+            '1. **🔍 Immediate Analysis:** Review the health monitoring results and identify root causes',
+            '2. **🛠️ Fix Critical Issues:** Address all failing components (build, tests, type-checking)',
+            '3. **🧪 Comprehensive Testing:** Ensure all fixes are properly tested',
+            '4. **📋 Quality Assurance:** Verify that the health score returns to >90',
+            '5. **📝 Documentation:** Document any significant changes or fixes applied',
+            '6. **🔄 Follow-up Monitoring:** Schedule additional health checks to prevent regression',
+            '',
+            '## 📊 Context:',
+            '- **Project:** Claude Code UI (Next.js 15)',
+            '- **Monitoring System:** Post-merge health assessment',
+            '- **CI/CD Platform:** GitHub Actions + CircleCI',
+            '- **Health Threshold:** Critical issues require immediate attention',
+            '- **Auto-remediation:** Enabled via CodeGen integration',
+            '',
+            '## 🚨 Escalation Rules:',
+            '- If this issue is not resolved within 2 hours, additional escalation will be triggered',
+            '- Critical health status requires immediate attention to prevent production issues',
+            '- System will continue monitoring and creating follow-up tasks until resolution',
+            '',
+            '## 📈 Success Criteria:',
+            '- [ ] All CI/CD checks passing',
+            '- [ ] Health score ≥ 90/100',
+            '- [ ] No critical issues remaining',
+            '- [ ] Comprehensive test coverage maintained',
+            '- [ ] Build and deployment systems operational',
+            '',
+            '**This is an automated critical alert from the Post-Merge Health Monitoring System.**'
+          ].join('\n');
 
           await github.rest.issues.create({
             owner: context.repo.owner,
             repo: context.repo.repo,
-            title: `🚨 CRITICAL: Post-Merge Health Issues - Score: ${healthScore}/100`,
+            title: '🚨 CRITICAL: Post-Merge Health Issues - Score: ' + healthScore + '/100',
             body: issueBody,
             labels: ['critical', 'health-monitoring', 'automated', 'codegen', 'post-merge']
           });
