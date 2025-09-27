@@ -86,28 +86,83 @@ HTMLElement.prototype.scrollIntoView = jest.fn()
 // Mock window.scrollTo
 global.scrollTo = jest.fn()
 
+// Mock Math.random and Math.floor for deterministic tests  
+global.Math.random = jest.fn(() => 0.5)
+global.Math.floor = jest.fn((x) => x >= 0 ? Math.trunc(x) : Math.trunc(x) - 1)
+
 // Mock framer-motion
-jest.mock('framer-motion', () => ({
-  motion: {
-    div: ({ children, ...props }) => React.createElement('div', props, children),
-    button: ({ children, ...props }) => React.createElement('button', props, children),
-    span: ({ children, ...props }) => React.createElement('span', props, children),
-    p: ({ children, ...props }) => React.createElement('p', props, children),
-    h1: ({ children, ...props }) => React.createElement('h1', props, children),
-    h2: ({ children, ...props }) => React.createElement('h2', props, children),
-    h3: ({ children, ...props }) => React.createElement('h3', props, children),
-    section: ({ children, ...props }) => React.createElement('section', props, children),
-    article: ({ children, ...props }) => React.createElement('article', props, children),
-    aside: ({ children, ...props }) => React.createElement('aside', props, children),
-    nav: ({ children, ...props }) => React.createElement('nav', props, children),
-  },
-  AnimatePresence: ({ children }) => children,
-  useAnimation: () => ({
-    start: jest.fn(),
-    stop: jest.fn(),
-    set: jest.fn(),
-  }),
-}))
+jest.mock('framer-motion', () => {
+  const createMotionComponent = (tag) => ({ children, initial, animate, exit, transition, ...props }) => {
+    // Filter out framer-motion specific props
+    const filteredProps = Object.keys(props).reduce((acc, key) => {
+      if (!['initial', 'animate', 'exit', 'transition', 'variants', 'whileHover', 'whileTap'].includes(key)) {
+        acc[key] = props[key];
+      }
+      return acc;
+    }, {});
+    return React.createElement(tag, filteredProps, children);
+  };
+
+  return {
+    motion: {
+      div: createMotionComponent('div'),
+      button: createMotionComponent('button'), 
+      span: createMotionComponent('span'),
+      p: createMotionComponent('p'),
+      h1: createMotionComponent('h1'),
+      h2: createMotionComponent('h2'),
+      h3: createMotionComponent('h3'),
+      section: createMotionComponent('section'),
+      article: createMotionComponent('article'),
+      aside: createMotionComponent('aside'),
+      nav: createMotionComponent('nav'),
+    },
+    AnimatePresence: ({ children }) => children,
+    useAnimation: () => ({
+      start: jest.fn(),
+      stop: jest.fn(),
+      set: jest.fn(),
+    }),
+  }
+})
+
+// Mock lucide-react icons
+jest.mock('lucide-react', () => {
+  const MockIcon = ({ className, 'data-testid': testId, ...props }) => 
+    React.createElement('svg', {
+      className,
+      'data-testid': testId,
+      'aria-label': props['aria-label'] || 'icon',
+      ...props
+    })
+  
+  return {
+    ChevronLeft: MockIcon,
+    ChevronRight: MockIcon,
+    Home: MockIcon,
+    FolderOpen: MockIcon,
+    FileText: MockIcon,
+    MessageSquare: MockIcon,
+    Terminal: MockIcon,
+    GitBranch: MockIcon,
+    Search: MockIcon,
+    Plus: MockIcon,
+    Settings: MockIcon,
+    Send: MockIcon,
+    Square: MockIcon,
+    Copy: MockIcon,
+    MoreVertical: MockIcon,
+    User: MockIcon,
+    Bot: MockIcon,
+    Code: MockIcon,
+    Download: MockIcon,
+    Upload: MockIcon,
+    Trash2: MockIcon,
+    Edit: MockIcon,
+    Eye: MockIcon,
+    EyeOff: MockIcon,
+  }
+})
 
 // Suppress console warnings in tests
 const originalError = console.error

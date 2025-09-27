@@ -247,10 +247,7 @@ jobs:
       if: always()
       run: |
         echo "⏰ Setting up continuous monitoring tasks..."
-        node scripts/task-scheduler.js schedule-health-monitoring \
-          --status="${{ steps.health-assessment.outputs.status }}" \
-          --score="${{ steps.health-assessment.outputs.score }}" \
-          --issues="${{ steps.health-assessment.outputs.issues }}"
+        node scripts/task-scheduler.js schedule-health-monitoring --status="${{ steps.health-assessment.outputs.status }}" --score="${{ steps.health-assessment.outputs.score }}" --issues="${{ steps.health-assessment.outputs.issues }}"
 
     - name: Upload health report
       if: always()
