@@ -460,12 +460,20 @@ jobs:
         echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
         echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
         echo "**Workflow:** ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Event:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Results" >> $GITHUB_STEP_SUMMARY
-        echo "- **Health Status:** ${{ needs.post-merge-health-check.outputs.health-status || 'Unknown' }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Health Score:** ${{ needs.post-merge-health-check.outputs.health-score || 'N/A' }}/100" >> $GITHUB_STEP_SUMMARY
-        echo "- **Intervention Required:** ${{ needs.post-merge-health-check.outputs.requires-intervention || 'Unknown' }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Issues Detected:** ${{ needs.post-merge-health-check.outputs.issues-detected || 'None' }}" >> $GITHUB_STEP_SUMMARY
+        
+        # Handle different workflow types
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          echo "**PR Health Check:** ${{ needs.pr-health-check.result || 'skipped' }}" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "**Health Status:** ${{ needs.post-merge-health-check.outputs.health-status || 'Unknown' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Health Score:** ${{ needs.post-merge-health-check.outputs.health-score || 'N/A' }}/100" >> $GITHUB_STEP_SUMMARY
+          echo "**Intervention Required:** ${{ needs.post-merge-health-check.outputs.requires-intervention || 'Unknown' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Issues Detected:** ${{ needs.post-merge-health-check.outputs.issues-detected || 'None' }}" >> $GITHUB_STEP_SUMMARY
+        fi
+        
         echo "" >> $GITHUB_STEP_SUMMARY
         
         if [ "${{ needs.trigger-codegen-intervention.result }}" = "success" ]; then
@@ -476,11 +484,17 @@ jobs:
         
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
-        echo "- Continuous monitoring has been configured" >> $GITHUB_STEP_SUMMARY
-        echo "- Follow-up checks scheduled based on health status" >> $GITHUB_STEP_SUMMARY
         
-        if [ "${{ needs.post-merge-health-check.outputs.requires-intervention }}" = "true" ]; then
-          echo "- 🚨 **Action Required:** Address the identified health issues" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          echo "- PR health validation completed" >> $GITHUB_STEP_SUMMARY
+          echo "- Full health monitoring will run after merge" >> $GITHUB_STEP_SUMMARY
         else
-          echo "- ✅ No immediate action required" >> $GITHUB_STEP_SUMMARY
+          echo "- Continuous monitoring has been configured" >> $GITHUB_STEP_SUMMARY
+          echo "- Follow-up checks scheduled based on health status" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.post-merge-health-check.outputs.requires-intervention }}" = "true" ]; then
+            echo "- 🚨 **Action Required:** Address the identified health issues" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ✅ No immediate action required" >> $GITHUB_STEP_SUMMARY
+          fi
         fi

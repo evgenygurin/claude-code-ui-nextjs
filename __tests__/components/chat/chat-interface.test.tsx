@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import ChatInterface from '@/components/chat/chat-interface';
 
 // Mock react-markdown
@@ -89,8 +89,10 @@ describe('ChatInterface', () => {
     // Should show loading initially
     expect(screen.getByText('Claude is thinking...')).toBeInTheDocument();
     
-    // Fast-forward time to simulate response
-    jest.advanceTimersByTime(2500);
+    // Fast-forward time to simulate response and wrap in act
+    await act(async () => {
+      jest.advanceTimersByTime(2500);
+    });
     
     await waitFor(() => {
       expect(screen.queryByText('Claude is thinking...')).not.toBeInTheDocument();
@@ -158,8 +160,8 @@ describe('ChatInterface', () => {
     // Input should be disabled while loading
     expect(input).toHaveValue('');
     
-    // Send button should show stop icon while loading
-    const stopIcon = screen.getByRole('button', { name: /stop/i });
+    // Send button should show stop icon while loading and have correct aria-label
+    const stopIcon = screen.getByRole('button', { name: /Stop/i });
     expect(stopIcon).toBeInTheDocument();
   });
 });
