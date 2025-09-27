@@ -26,6 +26,11 @@ on:
         default: false
         type: boolean
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
 env:
   NODE_VERSION: '20'
   MONITORING_ENABLED: true

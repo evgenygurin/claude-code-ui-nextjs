@@ -32,6 +32,11 @@ on:
           - normal
           - verbose
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
 env:
   NODE_VERSION: '20'
   CONFLICT_RESOLUTION_ENABLED: true

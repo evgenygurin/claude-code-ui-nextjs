@@ -12,6 +12,11 @@ on:
         required: false
         default: 'Manual CodeGen trigger'
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
 jobs:
   codegen-placeholder:
     runs-on: ubuntu-latest
