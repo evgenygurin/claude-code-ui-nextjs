@@ -30,52 +30,54 @@ describe('ChatInterface', () => {
 
   it('should render with initial welcome message', () => {
     render(<ChatInterface />);
-    
+
     expect(screen.getByText('Claude Code Chat')).toBeInTheDocument();
     expect(screen.getByText(/Hello! I'm Claude Code/)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/Type your message/)).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText(/Type your message/)
+    ).toBeInTheDocument();
   });
 
   it('should send message when form is submitted', async () => {
     render(<ChatInterface />);
-    
+
     const input = screen.getByPlaceholderText(/Type your message/);
     const sendButton = screen.getByRole('button', { name: /send/i });
-    
+
     fireEvent.change(input, { target: { value: 'Hello, Claude!' } });
     fireEvent.click(sendButton);
-    
+
     // Message should appear in chat
     expect(screen.getByText('Hello, Claude!')).toBeInTheDocument();
-    
+
     // Input should be cleared
     expect(input).toHaveValue('');
-    
+
     // Should show loading state
     expect(screen.getByText('Claude is thinking...')).toBeInTheDocument();
   });
 
   it('should send message with Ctrl+Enter', async () => {
     render(<ChatInterface />);
-    
+
     const textarea = screen.getByPlaceholderText(/Type your message/);
-    
+
     fireEvent.change(textarea, { target: { value: 'Test message' } });
     fireEvent.keyDown(textarea, { key: 'Enter', ctrlKey: true });
-    
+
     expect(screen.getByText('Test message')).toBeInTheDocument();
   });
 
   it('should not send empty messages', () => {
     render(<ChatInterface />);
-    
+
     const sendButton = screen.getByRole('button', { name: /send/i });
-    
+
     // Button should be disabled when input is empty
     expect(sendButton).toBeDisabled();
-    
+
     fireEvent.click(sendButton);
-    
+
     // Should not show loading state
     expect(screen.queryByText('Claude is thinking...')).not.toBeInTheDocument();
   });
@@ -125,19 +127,19 @@ describe('ChatInterface', () => {
         writeText: jest.fn(),
       },
     });
-    
+
     render(<ChatInterface />);
-    
+
     // Need to hover over a message to see copy button
     const messageDiv = screen.getByText(/Hello! I'm Claude Code/);
     fireEvent.mouseEnter(messageDiv.parentElement!);
-    
+
     // Find and click copy button (may need to adjust selector based on implementation)
     const copyButtons = screen.getAllByRole('button');
-    const copyButton = copyButtons.find(button => 
-      button.querySelector('svg') // Assuming copy button has an icon
+    const copyButton = copyButtons.find(
+      button => button.querySelector('svg') // Assuming copy button has an icon
     );
-    
+
     if (copyButton) {
       fireEvent.click(copyButton);
       expect(navigator.clipboard.writeText).toHaveBeenCalled();
@@ -146,19 +148,19 @@ describe('ChatInterface', () => {
 
   it('should handle keyboard shortcuts', () => {
     render(<ChatInterface />);
-    
+
     const textarea = screen.getByPlaceholderText(/Type your message/);
-    
+
     // Test Ctrl+Enter for sending
     fireEvent.change(textarea, { target: { value: 'Test' } });
     fireEvent.keyDown(textarea, { key: 'Enter', ctrlKey: true });
-    
+
     expect(screen.getByText('Test')).toBeInTheDocument();
   });
 
   it('should display timestamps for messages', () => {
     render(<ChatInterface />);
-    
+
     // Check if timestamp elements exist (they should be in the format like "10:30:00 AM")
     const timeElements = screen.getAllByText(/\d{1,2}:\d{2}:\d{2}/);
     expect(timeElements.length).toBeGreaterThan(0);
