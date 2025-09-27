@@ -75,8 +75,8 @@ jobs:
             CONFLICT_COUNT=$(grep -E "^(UU|AA|DD)" git_status.txt | wc -l)
           fi
 
-          # Также проверим маркеры конфликтов в файлах
-          if git grep -l "<<<<<<< HEAD" > conflict_markers.txt 2>/dev/null; then
+          # Также проверим маркеры конфликтов в файлах (исключаем файлы, которые законно содержат эти маркеры)
+          if git grep -l "<<<<<<< HEAD" -- ':!MERGE_CONFLICT_RESOLUTION.md' ':!scripts/merge-conflict-resolver.js' ':!tests/merge-conflicts/*' ':!.github/workflows/merge-conflict-resolution.yml' > conflict_markers.txt 2>/dev/null; then
             if [ -s conflict_markers.txt ]; then
               HAS_CONFLICTS=true
               MARKER_FILES=$(cat conflict_markers.txt | tr '\n' ',' | sed 's/,$//')
@@ -216,10 +216,10 @@ jobs:
         run: |
           echo "🔍 Проверка качества разрешения..."
 
-          # Проверяем, не остались ли маркеры конфликтов
-          if git grep -l "<<<<<<< HEAD" > remaining_conflicts.txt 2>/dev/null; then
+          # Проверяем, не остались ли маркеры конфликтов (исключаем файлы, которые законно содержат эти маркеры)
+          if git grep -l "<<<<<<< HEAD" -- ':!MERGE_CONFLICT_RESOLUTION.md' ':!scripts/merge-conflict-resolver.js' ':!tests/merge-conflicts/*' ':!.github/workflows/merge-conflict-resolution.yml' > remaining_conflicts.txt 2>/dev/null; then
             if [ -s remaining_conflicts.txt ]; then
-              echo "⚠️ Найдены оставшиеся маркеры конфликтов:"
+              echo "⚠️ Найдены оставшиеся маркеры конфликтов в неожиданных файлах:"
               cat remaining_conflicts.txt
               exit 1
             fi
