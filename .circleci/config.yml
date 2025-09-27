@@ -76,6 +76,27 @@ jobs:
           no_output_timeout: 5m
           command: npm install -g vercel@latest
       - run:
+          name: Validate Vercel Environment Variables
+          command: |
+            echo "🔍 Validating Vercel environment variables..."
+            if [ -z "$VERCEL_TOKEN" ]; then
+              echo "❌ ERROR: VERCEL_TOKEN is not set in CircleCI Environment Variables"
+              echo "Please add VERCEL_TOKEN to: https://app.circleci.com/settings/project/github/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/environment-variables"
+              exit 1
+            fi
+            if [ -z "$VERCEL_ORG_ID" ]; then
+              echo "❌ ERROR: VERCEL_ORG_ID is not set in CircleCI Environment Variables"
+              exit 1
+            fi
+            if [ -z "$VERCEL_PROJECT_ID" ]; then
+              echo "❌ ERROR: VERCEL_PROJECT_ID is not set in CircleCI Environment Variables"
+              exit 1
+            fi
+            echo "✅ All Vercel environment variables are properly configured"
+            echo "Token length: ${#VERCEL_TOKEN} chars"
+            echo "Org ID: ${VERCEL_ORG_ID:0:10}..."
+            echo "Project ID: ${VERCEL_PROJECT_ID:0:10}..."
+      - run:
           name: Deploy to Vercel Preview
           no_output_timeout: 20m
           command: |
@@ -104,6 +125,27 @@ jobs:
           name: Install Vercel CLI
           no_output_timeout: 5m
           command: npm install -g vercel@latest
+      - run:
+          name: Validate Vercel Environment Variables
+          command: |
+            echo "🔍 Validating Vercel environment variables for production..."
+            if [ -z "$VERCEL_TOKEN" ]; then
+              echo "❌ ERROR: VERCEL_TOKEN is not set in CircleCI Environment Variables"
+              echo "Please add VERCEL_TOKEN to: https://app.circleci.com/settings/project/github/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/environment-variables"
+              exit 1
+            fi
+            if [ -z "$VERCEL_ORG_ID" ]; then
+              echo "❌ ERROR: VERCEL_ORG_ID is not set in CircleCI Environment Variables"
+              exit 1
+            fi
+            if [ -z "$VERCEL_PROJECT_ID" ]; then
+              echo "❌ ERROR: VERCEL_PROJECT_ID is not set in CircleCI Environment Variables"
+              exit 1
+            fi
+            echo "✅ All Vercel environment variables are properly configured for production"
+            echo "Token length: ${#VERCEL_TOKEN} chars"
+            echo "Org ID: ${VERCEL_ORG_ID:0:10}..."
+            echo "Project ID: ${VERCEL_PROJECT_ID:0:10}..."
       - run:
           name: Deploy to Vercel Production
           no_output_timeout: 20m
