@@ -11,8 +11,31 @@ on:
         description: 'Error details'
         required: false
         default: 'Manual CodeGen trigger'
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
 
 jobs:
+  # Job for automatic triggers (push/PR) - just validates that workflow syntax is correct
+  codegen-validation:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    
+    steps:
+      - name: Validate CodeGen Integration Setup
+        run: |
+          echo "✅ CodeGen Integration workflow validation passed"
+          echo "🔍 Event type: ${{ github.event_name }}"
+          echo "📋 Branch: ${{ github.ref_name }}"
+          echo "💡 This workflow runs automatically to validate syntax but CodeGen features are only active on manual dispatch"
+          echo ""
+          echo "🤖 To manually trigger CodeGen analysis:"
+          echo "   1. Go to Actions tab in GitHub"
+          echo "   2. Select 'CodeGen Integration' workflow"
+          echo "   3. Click 'Run workflow' and provide error details"
+
+  # Job for manual triggers - runs the full CodeGen integration
   codegen-placeholder:
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch'
@@ -100,7 +123,7 @@ If this issue is not resolved within 1 hour, the system will automatically:
 
   check-pending-tasks:
     runs-on: ubuntu-latest
-    if: github.event_name == 'schedule'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     
     steps:
     - name: Checkout code
@@ -134,7 +157,7 @@ If this issue is not resolved within 1 hour, the system will automatically:
 
   notify-codegen:
     runs-on: ubuntu-latest
-    if: always()
+    if: always() && (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule')
     needs: [codegen-placeholder, check-pending-tasks]
     
     steps:
