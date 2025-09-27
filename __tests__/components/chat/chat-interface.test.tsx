@@ -98,8 +98,11 @@ describe('ChatInterface', () => {
       expect(screen.queryByText('Claude is thinking...')).not.toBeInTheDocument();
     });
     
-    // Should show simulated response
-    expect(screen.getByText(/I understand you want to/)).toBeInTheDocument();
+    // Should show simulated response containing the user's input
+    await waitFor(() => {
+      // The AI response should mention the user's command
+      expect(screen.getByText(/"Test command"/)).toBeInTheDocument();
+    });
   });
 
   it('should copy message content', () => {
