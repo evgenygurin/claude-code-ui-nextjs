@@ -159,7 +159,7 @@ describe('ChatInterface', () => {
     expect(input).toHaveValue('');
     
     // Send button should show stop icon while loading
-    const stopIcon = screen.getByRole('button', { name: /square/i });
+    const stopIcon = screen.getByRole('button', { name: /stop/i });
     expect(stopIcon).toBeInTheDocument();
   });
 });

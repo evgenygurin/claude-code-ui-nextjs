@@ -86,6 +86,44 @@ HTMLElement.prototype.scrollIntoView = jest.fn()
 // Mock window.scrollTo
 global.scrollTo = jest.fn()
 
+// Mock lucide-react icons
+jest.mock('lucide-react', () => {
+  const MockIcon = ({ className, 'data-testid': testId, ...props }) => 
+    React.createElement('svg', {
+      className,
+      'data-testid': testId,
+      'aria-label': props['aria-label'] || 'icon',
+      ...props
+    })
+  
+  return {
+    ChevronLeft: MockIcon,
+    ChevronRight: MockIcon,
+    Home: MockIcon,
+    FolderOpen: MockIcon,
+    FileText: MockIcon,
+    MessageSquare: MockIcon,
+    Terminal: MockIcon,
+    GitBranch: MockIcon,
+    Search: MockIcon,
+    Plus: MockIcon,
+    Settings: MockIcon,
+    Send: MockIcon,
+    Square: MockIcon,
+    Copy: MockIcon,
+    MoreVertical: MockIcon,
+    User: MockIcon,
+    Bot: MockIcon,
+    Code: MockIcon,
+    Download: MockIcon,
+    Upload: MockIcon,
+    Trash2: MockIcon,
+    Edit: MockIcon,
+    Eye: MockIcon,
+    EyeOff: MockIcon,
+  }
+})
+
 // Mock framer-motion
 jest.mock('framer-motion', () => ({
   motion: {
