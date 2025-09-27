@@ -94,7 +94,7 @@ jobs:
           echo "- ✅ Linting: PASSED" >> health-report.md
         else
           echo "- ❌ Linting: FAILED" >> health-report.md
-          ISSUES+=("linting_failed")
+          ISSUES+=("linting")
           HEALTH_SCORE=$((HEALTH_SCORE - 20))
         fi
         
@@ -102,7 +102,7 @@ jobs:
           echo "- ✅ Type checking: PASSED" >> health-report.md
         else
           echo "- ❌ Type checking: FAILED" >> health-report.md
-          ISSUES+=("type_check_failed")
+          ISSUES+=("type_checking")
           HEALTH_SCORE=$((HEALTH_SCORE - 25))
           CRITICAL_ISSUES=true
         fi
@@ -115,7 +115,7 @@ jobs:
           # Check coverage if available
           if [ -f "coverage/lcov-report/index.html" ]; then
             COVERAGE=$(grep -oP 'Functions.*?(\d+\.\d+)%' coverage/lcov-report/index.html | grep -oP '\d+\.\d+' | head -1 || echo "0")
-            # Convert to integer for comparison (multiply by 100)
+            # Convert to integer for comparison (multiply by 100) - safer than bc
             COVERAGE_INT=$(echo "$COVERAGE * 100" | awk '{printf "%.0f", $1}')
             if [ "$COVERAGE_INT" -ge 8000 ]; then  # 80.00% -> 8000
               echo "- ✅ Coverage: ${COVERAGE}% (Good)" >> health-report.md
@@ -127,7 +127,7 @@ jobs:
           fi
         else
           echo "- ❌ Tests: FAILED" >> health-report.md
-          ISSUES+=("tests_failed")
+          ISSUES+=("tests")
           HEALTH_SCORE=$((HEALTH_SCORE - 30))
           CRITICAL_ISSUES=true
         fi
@@ -144,7 +144,7 @@ jobs:
           fi
         else
           echo "- ❌ Build: FAILED" >> health-report.md
-          ISSUES+=("build_failed")
+          ISSUES+=("build")
           HEALTH_SCORE=$((HEALTH_SCORE - 35))
           CRITICAL_ISSUES=true
         fi
