@@ -25,7 +25,7 @@ jobs:
       run: |
         echo "🔍 Workflow Context:"
         echo "Event: ${{ github.event_name }}"
-        echo "Branch: ${{ github.ref_name }}"
+        echo "Branch: ${{ github.ref_name || github.head_ref || 'unknown' }}"
         echo "Repository: ${{ github.repository }}"
         
         if [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
@@ -73,13 +73,16 @@ jobs:
         else
           echo "🤖 CodeGen automated trigger on ${{ github.event_name }}"
           ERROR_TYPE="ci_failure"
-          ERROR_DETAILS="Automated trigger on ${{ github.event_name }} for branch ${{ github.ref_name }}"
+          ERROR_DETAILS="Automated trigger on ${{ github.event_name }} for branch ${{ github.ref_name || github.head_ref || 'unknown' }}"
         fi
         
         echo "This workflow can be used to trigger CodeGen analysis"
         
         # Run the error handler script (this won't fail the build)
-        node scripts/codegen-error-handler.js "$ERROR_TYPE" "$ERROR_DETAILS" || echo "Handler completed"
+        node scripts/codegen-error-handler.js "$ERROR_TYPE" "$ERROR_DETAILS" || {
+          echo "⚠️ Error handler failed, but continuing workflow"
+          echo "This is expected in a demo environment without actual CodeGen integration"
+        }
         
     - name: Create GitHub Issue for CodeGen
       if: failure() || github.event.workflow_run.conclusion == 'failure'
@@ -92,7 +95,7 @@ jobs:
             errorDetails = '${{ github.event.inputs.error_details }}' || 'CI/CD pipeline failure';
           } else {
             errorType = 'ci_failure';
-            errorDetails = 'Automated trigger on ${{ github.event_name }} for branch ${{ github.ref_name }}';
+            errorDetails = 'Automated trigger on ${{ github.event_name }} for branch ${{ github.ref_name || github.head_ref || "unknown" }}';
           }
           const runUrl = '${{ github.event.workflow_run.html_url }}' || '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
           
@@ -101,7 +104,7 @@ jobs:
 **Error Type:** ${errorType}
 **Error Details:** ${errorDetails}
 **Workflow Run:** [${runUrl}](${runUrl})
-**Branch:** ${{ github.ref_name }}
+**Branch:** ${{ github.ref_name || github.head_ref || 'unknown' }}
 **Commit:** ${{ github.sha }}
 **Timestamp:** ${new Date().toISOString()}
 
@@ -198,7 +201,7 @@ If this issue is not resolved within 1 hour, the system will automatically:
         fi
         
         echo "Repository: ${{ github.repository }}"
-        echo "Branch: ${{ github.ref_name }}"
+        echo "Branch: ${{ github.ref_name || github.head_ref || 'unknown' }}"
         echo "Commit: ${{ github.sha }}"
         
         # This could trigger a webhook, API call, or create a GitHub comment

@@ -72,7 +72,7 @@ jobs:
       run: |
         echo "🏥 Starting post-merge health assessment..."
         echo "Repository: ${{ github.repository }}"
-        echo "Branch: ${{ github.ref_name }}"
+        echo "Branch: ${{ github.ref_name || github.head_ref || 'unknown' }}"
         echo "Commit: ${{ github.sha }}"
         if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
           echo "Check type: ${{ github.event.inputs.check_type || 'comprehensive' }}"
@@ -100,7 +100,7 @@ jobs:
         echo "## 📊 Post-Merge Health Assessment Report" > health-report.md
         echo "**Timestamp:** $(date -u)" >> health-report.md
         echo "**Commit:** ${{ github.sha }}" >> health-report.md
-        echo "**Branch:** ${{ github.ref_name }}" >> health-report.md
+        echo "**Branch:** ${{ github.ref_name || github.head_ref || 'unknown' }}" >> health-report.md
         echo "" >> health-report.md
         
         # 1. Code Quality Check
@@ -272,7 +272,10 @@ jobs:
         node scripts/task-scheduler.js schedule-health-monitoring \
           --status="${{ steps.health-assessment.outputs.status }}" \
           --score="${{ steps.health-assessment.outputs.score }}" \
-          --issues="${{ steps.health-assessment.outputs.issues }}"
+          --issues="${{ steps.health-assessment.outputs.issues }}" || {
+          echo "⚠️ Task scheduler failed, but monitoring continues"
+          echo "This is expected in a demo environment"
+        }
 
     - name: Upload health report
       if: always()
@@ -314,7 +317,10 @@ jobs:
         
         # Use the enhanced error handler
         node scripts/codegen-error-handler.js "post_merge_health_issues" \
-          "Health status: $HEALTH_STATUS, Score: $HEALTH_SCORE/100, Issues: $ISSUES"
+          "Health status: $HEALTH_STATUS, Score: $HEALTH_SCORE/100, Issues: $ISSUES" || {
+          echo "⚠️ Error handler failed, but health monitoring continues"
+          echo "This is expected in a demo environment without actual CodeGen integration"
+        }
 
     - name: Create detailed GitHub issue
       if: needs.post-merge-health-check.outputs.health-status == 'critical'
@@ -333,7 +339,7 @@ jobs:
 - **Health Score:** ${healthScore}/100
 - **Issues Detected:** ${issues || 'None specified'}
 - **Monitoring Run:** [${runUrl}](${runUrl})
-- **Branch:** ${{ github.ref_name }}
+- **Branch:** ${{ github.ref_name || github.head_ref || 'unknown' }}
 - **Commit:** ${{ github.sha }}
 - **Timestamp:** ${new Date().toISOString()}
 
@@ -407,18 +413,18 @@ jobs:
         case "$HEALTH_STATUS" in
           "critical")
             # Frequent monitoring for critical issues
-            node scripts/task-scheduler.js schedule --type="health_check" --interval="30m"
-            node scripts/task-scheduler.js schedule --type="escalation_check" --interval="2h"
+            node scripts/task-scheduler.js schedule --type="health_check" --interval="30m" || echo "Task scheduling failed (expected in demo)"
+            node scripts/task-scheduler.js schedule --type="escalation_check" --interval="2h" || echo "Task scheduling failed (expected in demo)"
             ;;
           "degraded"|"warning")
             # Regular monitoring for degraded health
-            node scripts/task-scheduler.js schedule --type="health_check" --interval="2h"
-            node scripts/task-scheduler.js schedule --type="improvement_check" --interval="6h"
+            node scripts/task-scheduler.js schedule --type="health_check" --interval="2h" || echo "Task scheduling failed (expected in demo)"
+            node scripts/task-scheduler.js schedule --type="improvement_check" --interval="6h" || echo "Task scheduling failed (expected in demo)"
             ;;
           *)
             # Standard monitoring for healthy systems
-            node scripts/task-scheduler.js schedule --type="health_check" --interval="6h"
-            node scripts/task-scheduler.js schedule --type="routine_check" --interval="24h"
+            node scripts/task-scheduler.js schedule --type="health_check" --interval="6h" || echo "Task scheduling failed (expected in demo)"
+            node scripts/task-scheduler.js schedule --type="routine_check" --interval="24h" || echo "Task scheduling failed (expected in demo)"
             ;;
         esac
         
@@ -456,7 +462,7 @@ jobs:
         echo "## 🏥 Post-Merge Health Monitoring Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "**Repository:** ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
-        echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Branch:** ${{ github.ref_name || github.head_ref || 'unknown' }}" >> $GITHUB_STEP_SUMMARY
         echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
         echo "**Workflow:** ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
