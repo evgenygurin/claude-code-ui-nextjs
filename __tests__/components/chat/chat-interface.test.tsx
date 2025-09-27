@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import ChatInterface from '@/components/chat/chat-interface';
 
 // Mock react-markdown
@@ -78,6 +78,10 @@ describe('ChatInterface', () => {
   });
 
   it('should simulate AI response after delay', async () => {
+    // Mock Math.random to ensure consistent response
+    const originalRandom = Math.random;
+    Math.random = jest.fn(() => 0); // Always pick the first response
+    
     render(<ChatInterface />);
     
     const input = screen.getByPlaceholderText(/Type your message/);
@@ -90,7 +94,9 @@ describe('ChatInterface', () => {
     expect(screen.getByText('Claude is thinking...')).toBeInTheDocument();
     
     // Fast-forward time to simulate response
-    jest.advanceTimersByTime(2500);
+    act(() => {
+      jest.advanceTimersByTime(2500);
+    });
     
     await waitFor(() => {
       expect(screen.queryByText('Claude is thinking...')).not.toBeInTheDocument();
@@ -98,6 +104,9 @@ describe('ChatInterface', () => {
     
     // Should show simulated response
     expect(screen.getByText(/I understand you want to/)).toBeInTheDocument();
+    
+    // Restore original Math.random
+    Math.random = originalRandom;
   });
 
   it('should copy message content', () => {
