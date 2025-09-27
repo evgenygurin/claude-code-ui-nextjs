@@ -56,43 +56,20 @@ jobs:
           const errorDetails = '${{ github.event.inputs.error_details || "CI/CD pipeline failure" }}';
           const runUrl = '${{ github.event.workflow_run.html_url || github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
           
-          const issueBody = `🚨 **Automated CI/CD Failure Report**
-
-**Error Type:** ${errorType}
-**Error Details:** ${errorDetails}
-**Workflow Run:** [${runUrl}](${runUrl})
-**Branch:** ${{ github.ref_name }}
-**Commit:** ${{ github.sha }}
-**Timestamp:** ${new Date().toISOString()}
-
----
-
-@codegen Please analyze this CI/CD failure and implement fixes:
-
-## Required Actions:
-1. 🔍 **Analyze the root cause** of the failure
-2. 🛠️ **Implement specific fixes** for the identified issues
-3. 🧪 **Create/update comprehensive tests** to prevent regression
-4. 📋 **Review and improve CI/CD configuration** if needed
-5. 🔄 **Run the full development cycle** (lint → test → build → deploy)
-6. 📝 **Create/update PR** with all improvements
-7. ⏰ **Schedule follow-up check** in 1 hour if issues persist
-
-## Context:
-- Project: \`${{ github.repository }}\`
-- Node.js version: 20.x
-- Framework: Next.js 15
-- CI/CD: CircleCI + GitHub Actions
-- Error handling: Automated CodeGen integration
-
-## Follow-up Instructions:
-If this issue is not resolved within 1 hour, the system will automatically:
-- Re-analyze remaining problems
-- Apply additional fixes
-- Re-run the complete CI/CD pipeline
-- Continue until the PR is fully ready for merge
-
-**This is an automated issue created by the CI/CD error handling system.**`;
+          const issueBody = [
+            '🚨 Automated CI/CD Failure Report',
+            '',
+            'Error Type: ' + errorType,
+            'Error Details: ' + errorDetails,
+            'Workflow Run: ' + runUrl,
+            'Branch: ${{ github.ref_name }}',
+            'Commit: ${{ github.sha }}',
+            'Timestamp: ' + new Date().toISOString(),
+            '',
+            'Please analyze this CI/CD failure and implement fixes.',
+            '',
+            'This is an automated issue created by the CI/CD error handling system.'
+          ].join('\n');
 
           await github.rest.issues.create({
             owner: context.repo.owner,
