@@ -79,31 +79,34 @@ describe('ChatInterface', () => {
 
   it('should simulate AI response after delay', async () => {
     render(<ChatInterface />);
-    
+
     const input = screen.getByPlaceholderText(/Type your message/);
     const sendButton = screen.getByRole('button', { name: /send/i });
-    
-    await act(async () => {
-      fireEvent.change(input, { target: { value: 'Test command' } });
-      fireEvent.click(sendButton);
-    });
-    
+
+    fireEvent.change(input, { target: { value: 'Test command' } });
+    fireEvent.click(sendButton);
+
     // Should show loading initially
     expect(screen.getByText('Claude is thinking...')).toBeInTheDocument();
-    
-    // Fast-forward time to simulate response
-    await act(async () => {
-      jest.advanceTimersByTime(2500);
+
+    // Fast-forward time to simulate response (advance by 3000ms to ensure timeout fires)
+    act(() => {
+      jest.advanceTimersByTime(3000);
     });
-    
+
     await waitFor(() => {
-      expect(screen.queryByText('Claude is thinking...')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('Claude is thinking...')
+      ).not.toBeInTheDocument();
     });
-    
-    // Should show simulated response - be more specific to avoid multiple matches
+
+    // Should show simulated response - check for one of the possible responses
     await waitFor(() => {
-      const messages = screen.getAllByText(/Test command/);
-      expect(messages.length).toBeGreaterThanOrEqual(1);
+      expect(
+        screen.getByText(
+          /Let me help you with that|This is a common development task|comprehensive solution|Let me break it down/
+        )
+      ).toBeInTheDocument();
     });
   });
 
@@ -155,18 +158,16 @@ describe('ChatInterface', () => {
 
   it('should disable input while loading', async () => {
     render(<ChatInterface />);
-    
+
     const input = screen.getByPlaceholderText(/Type your message/);
     const sendButton = screen.getByRole('button', { name: /send/i });
-    
-    await act(async () => {
-      fireEvent.change(input, { target: { value: 'Test message' } });
-      fireEvent.click(sendButton);
-    });
-    
+
+    fireEvent.change(input, { target: { value: 'Test message' } });
+    fireEvent.click(sendButton);
+
     // Input should be disabled while loading
     expect(input).toHaveValue('');
-    
+
     // Send button should show stop icon while loading
     const stopButton = screen.getByRole('button', { name: /stop/i });
     expect(stopButton).toBeInTheDocument();

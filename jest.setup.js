@@ -86,6 +86,82 @@ HTMLElement.prototype.scrollIntoView = jest.fn()
 // Mock window.scrollTo
 global.scrollTo = jest.fn()
 
+// Mock framer-motion
+jest.mock('framer-motion', () => ({
+  motion: {
+    div: ({ children, ...props }) =>
+      React.createElement('div', props, children),
+    button: ({ children, ...props }) =>
+      React.createElement('button', props, children),
+    span: ({ children, ...props }) =>
+      React.createElement('span', props, children),
+    p: ({ children, ...props }) => React.createElement('p', props, children),
+    h1: ({ children, ...props }) => React.createElement('h1', props, children),
+    h2: ({ children, ...props }) => React.createElement('h2', props, children),
+    h3: ({ children, ...props }) => React.createElement('h3', props, children),
+    section: ({ children, ...props }) =>
+      React.createElement('section', props, children),
+    article: ({ children, ...props }) =>
+      React.createElement('article', props, children),
+    aside: ({ children, ...props }) =>
+      React.createElement('aside', props, children),
+    nav: ({ children, ...props }) =>
+      React.createElement('nav', props, children),
+  },
+  AnimatePresence: ({ children }) => children,
+  useAnimation: () => ({
+    start: jest.fn(),
+    stop: jest.fn(),
+    set: jest.fn(),
+  }),
+}))
+
+// Mock lucide-react icons
+jest.mock('lucide-react', () => {
+  const MockIcon = ({ className, ...props }) =>
+    React.createElement('div', {
+      className: `mock-icon ${className || ''}`,
+      'data-testid': 'mock-icon',
+      ...props,
+    })
+
+  return {
+    ChevronLeft: MockIcon,
+    ChevronRight: MockIcon,
+    Home: MockIcon,
+    FolderOpen: MockIcon,
+    FileText: MockIcon,
+    MessageSquare: MockIcon,
+    Terminal: MockIcon,
+    GitBranch: MockIcon,
+    Search: MockIcon,
+    Plus: MockIcon,
+    Settings: MockIcon,
+    Send: MockIcon,
+    Square: MockIcon,
+    Bot: MockIcon,
+    User: MockIcon,
+    File: MockIcon,
+    Folder: MockIcon,
+    Code: MockIcon,
+    Image: MockIcon,
+    Download: MockIcon,
+    Upload: MockIcon,
+    Trash: MockIcon,
+    Edit: MockIcon,
+    Copy: MockIcon,
+    X: MockIcon,
+    Check: MockIcon,
+    AlertCircle: MockIcon,
+    Info: MockIcon,
+    CheckCircle: MockIcon,
+    XCircle: MockIcon,
+    Loader: MockIcon,
+    Menu: MockIcon,
+    MoreVertical: MockIcon,
+  }
+})
+
 // Suppress console warnings in tests
 const originalError = console.error
 beforeAll(() => {

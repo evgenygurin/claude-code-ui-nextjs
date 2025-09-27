@@ -1,12 +1,36 @@
-node_modules
-.next
-dist
-build
-.env.local
-.env.production
-.env
-
-# Ignore workflow files due to YAML parsing issues
+# Exclude workflow files that have complex YAML structures
 .github/workflows/*.yml
-.github/workflows/*.yaml
-.circleci/config.yml
+
+# Build outputs
+build/
+dist/
+.next/
+out/
+
+# Dependencies
+node_modules/
+
+# Environment files
+.env*
+
+# Logs
+*.log
+
+# Lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Coverage reports
+coverage/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Health monitoring data
+.health-monitoring/
