@@ -9,10 +9,7 @@
     "score": 95,
     "issues": [],
     "errorType": "post_merge_health_significant_improvement",
-    "resolvedIssues": [
-      "build",
-      "tests"
-    ],
+    "resolvedIssues": ["build", "tests"],
     "branch": "main",
     "commit": "test-commit-improvement"
   },

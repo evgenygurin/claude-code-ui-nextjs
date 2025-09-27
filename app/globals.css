@@ -139,7 +139,7 @@
 }
 
 .message-code {
-  @apply bg-muted p-3 rounded-md font-mono text-sm overflow-x-auto;
+  @apply overflow-x-auto rounded-md bg-muted p-3 font-mono text-sm;
 }
 
 /* Mobile optimizations */
@@ -147,7 +147,7 @@
   .mobile-hidden {
     display: none;
   }
-  
+
   .mobile-full {
     width: 100vw;
     height: 100vh;
@@ -156,5 +156,8 @@
 
 /* Dark mode transitions */
 * {
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
 }

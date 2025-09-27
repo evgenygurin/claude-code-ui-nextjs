@@ -14,7 +14,7 @@ class MonitoringSystemTester {
     this.testResults = [];
     this.healthDir = '.health-monitoring';
     this.testDataDir = path.join(this.healthDir, 'test-data');
-    
+
     this.ensureTestEnvironment();
   }
 
@@ -28,7 +28,7 @@ class MonitoringSystemTester {
       path.join(this.healthDir, 'alerts'),
       path.join(this.healthDir, 'trends'),
       '.codegen-tasks',
-      '.codegen-reports'
+      '.codegen-reports',
     ];
 
     dirs.forEach(dir => {
@@ -43,17 +43,17 @@ class MonitoringSystemTester {
 
     const testSuites = [
       'testTaskScheduler',
-      'testHealthChangeDetector', 
+      'testHealthChangeDetector',
       'testNotificationManager',
       'testCodeGenErrorHandler',
       'testWorkflowIntegration',
-      'testEndToEndScenarios'
+      'testEndToEndScenarios',
     ];
 
     for (const testSuite of testSuites) {
       console.log(`\n📋 Running test suite: ${testSuite}`);
       console.log(''.padEnd(50, '='));
-      
+
       try {
         await this[testSuite]();
         this.recordTestResult(testSuite, 'PASSED', 'All tests in suite passed');
@@ -69,7 +69,7 @@ class MonitoringSystemTester {
 
   async testTaskScheduler() {
     console.log('🔧 Testing Task Scheduler...');
-    
+
     const TaskScheduler = require('./task-scheduler');
     const scheduler = new TaskScheduler();
 
@@ -77,7 +77,10 @@ class MonitoringSystemTester {
     console.log('  1. Testing delayed task scheduling...');
     const delayedTask = await scheduler.scheduleDelayedTask();
     this.assert(delayedTask.id, 'Delayed task should have an ID');
-    this.assert(delayedTask.type === 'pr_readiness_check', 'Task type should be correct');
+    this.assert(
+      delayedTask.type === 'pr_readiness_check',
+      'Task type should be correct'
+    );
     console.log('    ✅ Delayed task scheduling works');
 
     // Test 2: Health monitoring task scheduling
@@ -86,11 +89,17 @@ class MonitoringSystemTester {
       status: 'critical',
       score: 45,
       issues: 'build,tests',
-      interval: '30m'
+      interval: '30m',
     });
     this.assert(healthTask.id, 'Health task should have an ID');
-    this.assert(healthTask.type === 'health_monitoring', 'Health task type should be correct');
-    this.assert(healthTask.priority === 'high', 'Critical health should have high priority');
+    this.assert(
+      healthTask.type === 'health_monitoring',
+      'Health task type should be correct'
+    );
+    this.assert(
+      healthTask.priority === 'high',
+      'Critical health should have high priority'
+    );
     console.log('    ✅ Health monitoring scheduling works');
 
     // Test 3: Task checking and execution
@@ -102,7 +111,11 @@ class MonitoringSystemTester {
     // Test 4: Health trends analysis
     console.log('  4. Testing health trends analysis...');
     await scheduler.trackHealthTrends();
-    const trendsFile = path.join(this.healthDir, 'trends', 'health-trends.json');
+    const trendsFile = path.join(
+      this.healthDir,
+      'trends',
+      'health-trends.json'
+    );
     this.assert(fs.existsSync(trendsFile), 'Trends file should be created');
     console.log('    ✅ Health trends analysis works');
 
@@ -111,7 +124,7 @@ class MonitoringSystemTester {
 
   async testHealthChangeDetector() {
     console.log('🔍 Testing Health Change Detector...');
-    
+
     const HealthChangeDetector = require('./health-change-detector');
     const detector = new HealthChangeDetector();
 
@@ -122,14 +135,20 @@ class MonitoringSystemTester {
     console.log('  1. Testing current health status detection...');
     const currentHealth = await detector.getCurrentHealthStatus();
     this.assert(currentHealth.timestamp, 'Health status should have timestamp');
-    this.assert(typeof currentHealth.overallScore === 'number', 'Should have numeric score');
+    this.assert(
+      typeof currentHealth.overallScore === 'number',
+      'Should have numeric score'
+    );
     this.assert(currentHealth.status, 'Should have status');
     console.log('    ✅ Current health detection works');
 
     // Test 2: Health baseline retrieval
     console.log('  2. Testing health baseline retrieval...');
     const baseline = await detector.getHealthBaseline();
-    this.assert(typeof baseline.score === 'number', 'Baseline should have numeric score');
+    this.assert(
+      typeof baseline.score === 'number',
+      'Baseline should have numeric score'
+    );
     console.log('    ✅ Health baseline retrieval works');
 
     // Test 3: Change detection
@@ -151,7 +170,7 @@ class MonitoringSystemTester {
 
   async testNotificationManager() {
     console.log('🔔 Testing Notification Manager...');
-    
+
     const NotificationManager = require('./notification-manager');
     const manager = new NotificationManager();
 
@@ -163,27 +182,45 @@ class MonitoringSystemTester {
       issues: ['build', 'tests'],
       errorType: 'post_merge_health_critical',
       branch: 'main',
-      commit: 'test-commit'
+      commit: 'test-commit',
     };
 
     const alert = await manager.processHealthAlert(healthData);
     this.assert(alert.id, 'Alert should have an ID');
-    this.assert(alert.priority === 'critical', 'Critical health should have critical priority');
-    this.assert(alert.actions_taken.length > 0, 'Actions should have been taken');
+    this.assert(
+      alert.priority === 'critical',
+      'Critical health should have critical priority'
+    );
+    this.assert(
+      alert.actions_taken.length > 0,
+      'Actions should have been taken'
+    );
     console.log('    ✅ Alert processing works');
 
     // Test 2: Active alerts retrieval
     console.log('  2. Testing active alerts retrieval...');
     const activeAlerts = await manager.getActiveAlerts();
-    this.assert(Array.isArray(activeAlerts), 'Active alerts should be an array');
+    this.assert(
+      Array.isArray(activeAlerts),
+      'Active alerts should be an array'
+    );
     console.log('    ✅ Active alerts retrieval works');
 
     // Test 3: Alert resolution
     console.log('  3. Testing alert resolution...');
     if (activeAlerts.length > 0) {
-      const resolvedAlert = await manager.resolveAlert(activeAlerts[0].id, 'Test resolution');
-      this.assert(resolvedAlert.status === 'resolved', 'Alert should be resolved');
-      this.assert(resolvedAlert.resolution, 'Alert should have resolution details');
+      const resolvedAlert = await manager.resolveAlert(
+        activeAlerts[0].id,
+        'Test resolution'
+      );
+      this.assert(
+        resolvedAlert.status === 'resolved',
+        'Alert should be resolved'
+      );
+      this.assert(
+        resolvedAlert.resolution,
+        'Alert should have resolution details'
+      );
     }
     console.log('    ✅ Alert resolution works');
 
@@ -192,18 +229,23 @@ class MonitoringSystemTester {
 
   async testCodeGenErrorHandler() {
     console.log('🤖 Testing CodeGen Error Handler...');
-    
+
     const CodeGenErrorHandler = require('./codegen-error-handler');
     const handler = new CodeGenErrorHandler();
 
     // Test 1: Error handling
     console.log('  1. Testing error handling...');
-    await handler.handleError('post_merge_health_critical', 'Test health degradation detected');
-    
+    await handler.handleError(
+      'post_merge_health_critical',
+      'Test health degradation detected'
+    );
+
     // Check if error report was created
     const reportsDir = '.codegen-reports';
     if (fs.existsSync(reportsDir)) {
-      const reportFiles = fs.readdirSync(reportsDir).filter(f => f.startsWith('error-'));
+      const reportFiles = fs
+        .readdirSync(reportsDir)
+        .filter(f => f.startsWith('error-'));
       this.assert(reportFiles.length > 0, 'Error report should be created');
     }
     console.log('    ✅ Error handling works');
@@ -222,12 +264,15 @@ class MonitoringSystemTester {
       project: 'test-project',
       branch: 'main',
       commit: 'test-commit',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     const prompt = handler.generateAnalysisPrompt(mockErrorReport);
     this.assert(prompt.includes('@codegen'), 'Prompt should mention @codegen');
-    this.assert(prompt.includes('Post-Merge'), 'Post-merge prompt should be used for health issues');
+    this.assert(
+      prompt.includes('Post-Merge'),
+      'Post-merge prompt should be used for health issues'
+    );
     console.log('    ✅ Analysis prompt generation works');
 
     console.log('✅ CodeGen Error Handler tests passed');
@@ -239,20 +284,32 @@ class MonitoringSystemTester {
     // Test 1: Workflow file exists and is valid
     console.log('  1. Testing workflow file existence...');
     const workflowFile = '.github/workflows/post-merge-monitoring.yml';
-    this.assert(fs.existsSync(workflowFile), 'Post-merge monitoring workflow should exist');
-    
+    this.assert(
+      fs.existsSync(workflowFile),
+      'Post-merge monitoring workflow should exist'
+    );
+
     const workflowContent = fs.readFileSync(workflowFile, 'utf8');
-    this.assert(workflowContent.includes('post-merge-health-check'), 'Workflow should contain health check job');
-    this.assert(workflowContent.includes('trigger-codegen-intervention'), 'Workflow should contain CodeGen intervention');
+    this.assert(
+      workflowContent.includes('post-merge-health-check'),
+      'Workflow should contain health check job'
+    );
+    this.assert(
+      workflowContent.includes('trigger-codegen-intervention'),
+      'Workflow should contain CodeGen intervention'
+    );
     console.log('    ✅ Workflow file is valid');
 
     // Test 2: Configuration files exist
     console.log('  2. Testing configuration files...');
     const configFile = 'config/notification-config.json';
     this.assert(fs.existsSync(configFile), 'Notification config should exist');
-    
+
     const config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
-    this.assert(config.notification_settings, 'Config should have notification settings');
+    this.assert(
+      config.notification_settings,
+      'Config should have notification settings'
+    );
     this.assert(config.escalation_rules, 'Config should have escalation rules');
     console.log('    ✅ Configuration files are valid');
 
@@ -262,12 +319,12 @@ class MonitoringSystemTester {
       'scripts/task-scheduler.js',
       'scripts/health-change-detector.js',
       'scripts/notification-manager.js',
-      'scripts/codegen-error-handler.js'
+      'scripts/codegen-error-handler.js',
     ];
 
     for (const script of scripts) {
       this.assert(fs.existsSync(script), `${script} should exist`);
-      
+
       // Test if script can be loaded without syntax errors
       try {
         require(path.resolve(script));
@@ -307,7 +364,7 @@ class MonitoringSystemTester {
     // Simulate critical health degradation
     const HealthChangeDetector = require('./health-change-detector');
     const NotificationManager = require('./notification-manager');
-    
+
     const detector = new HealthChangeDetector();
     const notificationManager = new NotificationManager();
 
@@ -318,16 +375,23 @@ class MonitoringSystemTester {
       issues: ['build', 'tests', 'type_checking'],
       errorType: 'post_merge_health_critical_degradation',
       branch: 'main',
-      commit: 'test-commit-critical'
+      commit: 'test-commit-critical',
     };
 
     // Process the critical health alert
-    const alert = await notificationManager.processHealthAlert(criticalHealthData);
-    
-    this.assert(alert.priority === 'critical', 'Should trigger critical priority');
-    this.assert(alert.actions_taken.some(action => 
-      action.action === 'trigger_codegen_immediate'
-    ), 'Should trigger immediate CodeGen intervention');
+    const alert =
+      await notificationManager.processHealthAlert(criticalHealthData);
+
+    this.assert(
+      alert.priority === 'critical',
+      'Should trigger critical priority'
+    );
+    this.assert(
+      alert.actions_taken.some(
+        action => action.action === 'trigger_codegen_immediate'
+      ),
+      'Should trigger immediate CodeGen intervention'
+    );
   }
 
   async testHealthImprovementScenario() {
@@ -342,15 +406,23 @@ class MonitoringSystemTester {
       errorType: 'post_merge_health_significant_improvement',
       resolvedIssues: ['build', 'tests'],
       branch: 'main',
-      commit: 'test-commit-improvement'
+      commit: 'test-commit-improvement',
     };
 
     const alert = await notificationManager.processHealthAlert(improvementData);
-    
-    this.assert(alert.priority === 'low', 'Should trigger low priority for improvements');
-    this.assert(alert.actions_taken.some(action => 
-      action.action === 'update_baselines' || action.action === 'document_success'
-    ), 'Should update baselines or document success');
+
+    this.assert(
+      alert.priority === 'low',
+      'Should trigger low priority for improvements'
+    );
+    this.assert(
+      alert.actions_taken.some(
+        action =>
+          action.action === 'update_baselines' ||
+          action.action === 'document_success'
+      ),
+      'Should update baselines or document success'
+    );
   }
 
   async testTrendBasedScenario() {
@@ -362,7 +434,7 @@ class MonitoringSystemTester {
     this.createMockTrendData();
 
     const analysis = await detector.detectHealthChanges();
-    
+
     this.assert(analysis.trends, 'Should have trends analysis');
     this.assert(analysis.changes, 'Should have changes analysis');
   }
@@ -384,23 +456,36 @@ class MonitoringSystemTester {
       fs.mkdirSync(reportsDir, { recursive: true });
     }
 
-    const reportFile = path.join(reportsDir, `${today}-120000-health-report.md`);
-    fs.writeFileSync(reportFile, `# Health Report\nScore: 85/100\nStatus: healthy`);
+    const reportFile = path.join(
+      reportsDir,
+      `${today}-120000-health-report.md`
+    );
+    fs.writeFileSync(
+      reportFile,
+      `# Health Report\nScore: 85/100\nStatus: healthy`
+    );
   }
 
   createMockTrendData() {
     // Create multiple health reports with declining scores
     const reportsDir = path.join(this.healthDir, 'reports');
     const scores = [90, 85, 80, 75, 70]; // Declining trend
-    
+
     scores.forEach((score, index) => {
       const date = new Date();
-      date.setHours(date.getHours() - (index * 6)); // 6 hours apart
-      
+      date.setHours(date.getHours() - index * 6); // 6 hours apart
+
       const dateStr = date.toISOString().split('T')[0].replace(/-/g, '');
-      const timeStr = date.toISOString().split('T')[1].replace(/[:.]/g, '').substring(0, 6);
-      
-      const reportFile = path.join(reportsDir, `${dateStr}-${timeStr}-health-report.md`);
+      const timeStr = date
+        .toISOString()
+        .split('T')[1]
+        .replace(/[:.]/g, '')
+        .substring(0, 6);
+
+      const reportFile = path.join(
+        reportsDir,
+        `${dateStr}-${timeStr}-health-report.md`
+      );
       fs.writeFileSync(reportFile, `# Health Report\nScore: ${score}/100`);
     });
   }
@@ -416,7 +501,7 @@ class MonitoringSystemTester {
       testSuite,
       result,
       details,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 
@@ -426,11 +511,11 @@ class MonitoringSystemTester {
 
     const passed = this.testResults.filter(r => r.result === 'PASSED').length;
     const failed = this.testResults.filter(r => r.result === 'FAILED').length;
-    
+
     console.log(`Total Test Suites: ${this.testResults.length}`);
     console.log(`Passed: ${passed} ✅`);
     console.log(`Failed: ${failed} ❌`);
-    
+
     if (failed > 0) {
       console.log('\n❌ Failed Test Suites:');
       this.testResults
@@ -447,21 +532,28 @@ class MonitoringSystemTester {
         total: this.testResults.length,
         passed,
         failed,
-        success_rate: `${Math.round((passed / this.testResults.length) * 100)}%`
+        success_rate: `${Math.round((passed / this.testResults.length) * 100)}%`,
       },
       results: this.testResults,
-      recommendations: this.generateRecommendations()
+      recommendations: this.generateRecommendations(),
     };
 
-    const reportFile = path.join(this.testDataDir, `test-report-${Date.now()}.json`);
+    const reportFile = path.join(
+      this.testDataDir,
+      `test-report-${Date.now()}.json`
+    );
     fs.writeFileSync(reportFile, JSON.stringify(report, null, 2));
-    
+
     console.log(`\n📝 Detailed test report saved: ${reportFile}`);
 
     if (failed === 0) {
-      console.log('\n🎉 All tests passed! The post-merge monitoring system is ready for deployment.');
+      console.log(
+        '\n🎉 All tests passed! The post-merge monitoring system is ready for deployment.'
+      );
     } else {
-      console.log('\n⚠️  Some tests failed. Please review and fix the issues before deployment.');
+      console.log(
+        '\n⚠️  Some tests failed. Please review and fix the issues before deployment.'
+      );
     }
 
     return report;
@@ -469,17 +561,25 @@ class MonitoringSystemTester {
 
   generateRecommendations() {
     const recommendations = [];
-    
+
     const failedTests = this.testResults.filter(r => r.result === 'FAILED');
-    
+
     if (failedTests.length === 0) {
-      recommendations.push('✅ All tests passed - system is ready for production deployment');
-      recommendations.push('🔄 Consider setting up automated test runs in CI/CD pipeline');
+      recommendations.push(
+        '✅ All tests passed - system is ready for production deployment'
+      );
+      recommendations.push(
+        '🔄 Consider setting up automated test runs in CI/CD pipeline'
+      );
       recommendations.push('📊 Monitor the system performance in production');
     } else {
-      recommendations.push('❌ Fix failing tests before deploying to production');
+      recommendations.push(
+        '❌ Fix failing tests before deploying to production'
+      );
       recommendations.push('🧪 Run tests again after fixes are applied');
-      recommendations.push('🔍 Review error logs for detailed failure information');
+      recommendations.push(
+        '🔍 Review error logs for detailed failure information'
+      );
     }
 
     recommendations.push('📚 Update documentation with test results');
@@ -491,12 +591,12 @@ class MonitoringSystemTester {
 
   async cleanup() {
     console.log('🧹 Cleaning up test data...');
-    
+
     // Remove test files created during testing
     const testFiles = [
       path.join(this.healthDir, 'test-data'),
       '.codegen-tasks',
-      '.codegen-reports'
+      '.codegen-reports',
     ];
 
     for (const testPath of testFiles) {
@@ -530,11 +630,11 @@ if (require.main === module) {
         const passed = results.filter(r => r.result === 'PASSED').length;
         process.exit(passed === results.length ? 0 : 1);
         break;
-        
+
       case 'cleanup':
         await tester.cleanup();
         break;
-        
+
       case 'help':
       default:
         console.log(`
