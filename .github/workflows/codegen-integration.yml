@@ -129,8 +129,8 @@ jobs:
 
   notify-codegen:
     runs-on: ubuntu-latest
-    if: always() && (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule')
-    needs: [codegen-placeholder, check-pending-tasks]
+    if: github.event_name == 'workflow_dispatch'
+    needs: [codegen-placeholder]
     
     steps:
     - name: Notify CodeGen Service
@@ -141,7 +141,6 @@ jobs:
         # to notify about the workflow status and any pending tasks
         
         echo "Workflow Status: ${{ needs.codegen-placeholder.result }}"
-        echo "Task Check Status: ${{ needs.check-pending-tasks.result }}"
         echo "Repository: ${{ github.repository }}"
         echo "Branch: ${{ github.ref_name }}"
         echo "Commit: ${{ github.sha }}"
@@ -150,3 +149,20 @@ jobs:
         # to notify CodeGen about the current status
         
         echo "✅ CodeGen notification completed"
+  
+  notify-scheduled-tasks:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    needs: [check-pending-tasks]
+    
+    steps:
+    - name: Notify CodeGen Service About Scheduled Tasks
+      run: |
+        echo "📡 Notifying CodeGen service about scheduled task completion..."
+        
+        echo "Task Check Status: ${{ needs.check-pending-tasks.result }}"
+        echo "Repository: ${{ github.repository }}"
+        echo "Branch: ${{ github.ref_name }}"
+        echo "Commit: ${{ github.sha }}"
+        
+        echo "✅ Scheduled task notification completed"
