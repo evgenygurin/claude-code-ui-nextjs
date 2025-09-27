@@ -31,8 +31,19 @@ env:
   MONITORING_ENABLED: true
 
 jobs:
+  pr-skip-check:
+    name: Skip Post-Merge Monitoring on PR
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+    - name: Skip monitoring on PR
+      run: |
+        echo "⏭️ Skipping post-merge monitoring on PR branch"
+        echo "This workflow is designed to run after merge to main/master"
+        echo "PR checks are handled by other CI workflows"
+
   post-merge-health-check:
-    name: Post-Merge Health Assessment
+    name: Post-Merge Health Assessment  
     runs-on: ubuntu-latest
     if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && (github.base_ref == 'main' || github.base_ref == 'master'))
     
