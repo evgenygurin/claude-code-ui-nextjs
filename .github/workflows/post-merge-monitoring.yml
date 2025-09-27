@@ -115,7 +115,9 @@ jobs:
           # Check coverage if available
           if [ -f "coverage/lcov-report/index.html" ]; then
             COVERAGE=$(grep -oP 'Functions.*?(\d+\.\d+)%' coverage/lcov-report/index.html | grep -oP '\d+\.\d+' | head -1 || echo "0")
-            if (( $(echo "$COVERAGE >= 80" | bc -l) )); then
+            # Convert to integer for comparison (multiply by 100)
+            COVERAGE_INT=$(echo "$COVERAGE * 100" | awk '{printf "%.0f", $1}')
+            if [ "$COVERAGE_INT" -ge 8000 ]; then  # 80.00% -> 8000
               echo "- ✅ Coverage: ${COVERAGE}% (Good)" >> health-report.md
             else
               echo "- ⚠️ Coverage: ${COVERAGE}% (Low)" >> health-report.md
@@ -247,10 +249,15 @@ jobs:
       if: always()
       run: |
         echo "⏰ Setting up continuous monitoring tasks..."
-        node scripts/task-scheduler.js schedule-health-monitoring \
+        chmod +x scripts/task-scheduler.js 2>/dev/null || echo "Script permissions already set"
+        if node scripts/task-scheduler.js schedule-health-monitoring \
           --status="${{ steps.health-assessment.outputs.status }}" \
           --score="${{ steps.health-assessment.outputs.score }}" \
-          --issues="${{ steps.health-assessment.outputs.issues }}"
+          --issues="${{ steps.health-assessment.outputs.issues }}"; then
+          echo "✅ Health monitoring scheduled successfully"
+        else
+          echo "⚠️ Health monitoring scheduling encountered issues but continuing"
+        fi
 
     - name: Upload health report
       if: always()
@@ -290,9 +297,14 @@ jobs:
         HEALTH_SCORE="${{ needs.post-merge-health-check.outputs.health-score }}"
         ISSUES="${{ needs.post-merge-health-check.outputs.issues-detected }}"
         
-        # Use the enhanced error handler
-        node scripts/codegen-error-handler.js "post_merge_health_issues" \
-          "Health status: $HEALTH_STATUS, Score: $HEALTH_SCORE/100, Issues: $ISSUES"
+        # Ensure script is executable and run with error handling
+        chmod +x scripts/codegen-error-handler.js 2>/dev/null || echo "Script permissions already set"
+        if node scripts/codegen-error-handler.js "post_merge_health_issues" \
+          "Health status: $HEALTH_STATUS, Score: $HEALTH_SCORE/100, Issues: $ISSUES"; then
+          echo "✅ CodeGen intervention triggered successfully"
+        else
+          echo "⚠️ CodeGen intervention encountered issues but continuing"
+        fi
 
     - name: Create detailed GitHub issue
       if: needs.post-merge-health-check.outputs.health-status == 'critical'
@@ -379,24 +391,30 @@ jobs:
       run: |
         echo "🔧 Setting up continuous health monitoring..."
         
+        # Ensure script is executable
+        chmod +x scripts/task-scheduler.js 2>/dev/null || echo "Script permissions already set"
+        
         # Schedule various monitoring tasks based on current health
         HEALTH_STATUS="${{ needs.post-merge-health-check.outputs.health-status }}"
         
         case "$HEALTH_STATUS" in
           "critical")
             # Frequent monitoring for critical issues
-            node scripts/task-scheduler.js schedule --type="health_check" --interval="30m"
-            node scripts/task-scheduler.js schedule --type="escalation_check" --interval="2h"
+            echo "Setting up critical monitoring schedule..."
+            node scripts/task-scheduler.js schedule --type="health_check" --interval="30m" || echo "Health check scheduling failed"
+            node scripts/task-scheduler.js schedule --type="escalation_check" --interval="2h" || echo "Escalation check scheduling failed"
             ;;
           "degraded"|"warning")
             # Regular monitoring for degraded health
-            node scripts/task-scheduler.js schedule --type="health_check" --interval="2h"
-            node scripts/task-scheduler.js schedule --type="improvement_check" --interval="6h"
+            echo "Setting up degraded monitoring schedule..."
+            node scripts/task-scheduler.js schedule --type="health_check" --interval="2h" || echo "Health check scheduling failed"
+            node scripts/task-scheduler.js schedule --type="improvement_check" --interval="6h" || echo "Improvement check scheduling failed"
             ;;
           *)
             # Standard monitoring for healthy systems
-            node scripts/task-scheduler.js schedule --type="health_check" --interval="6h"
-            node scripts/task-scheduler.js schedule --type="routine_check" --interval="24h"
+            echo "Setting up standard monitoring schedule..."
+            node scripts/task-scheduler.js schedule --type="health_check" --interval="6h" || echo "Health check scheduling failed"
+            node scripts/task-scheduler.js schedule --type="routine_check" --interval="24h" || echo "Routine check scheduling failed"
             ;;
         esac
         

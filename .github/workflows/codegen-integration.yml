@@ -40,8 +40,17 @@ jobs:
         ERROR_TYPE="${{ github.event.inputs.error_type || 'ci_failure' }}"
         ERROR_DETAILS="${{ github.event.inputs.error_details || 'CI/CD pipeline failure detected' }}"
         
-        # Run the error handler script (this won't fail the build)
-        node scripts/codegen-error-handler.js "$ERROR_TYPE" "$ERROR_DETAILS" || echo "Handler completed"
+        # Ensure script is executable
+        chmod +x scripts/codegen-error-handler.js 2>/dev/null || echo "Script permissions already set"
+        
+        # Run the error handler script with error handling
+        echo "Running CodeGen error handler..."
+        if node scripts/codegen-error-handler.js "$ERROR_TYPE" "$ERROR_DETAILS"; then
+          echo "✅ CodeGen handler completed successfully"
+        else
+          echo "⚠️ CodeGen handler encountered issues but continuing workflow"
+          echo "Error details logged for analysis"
+        fi
         
     - name: Create GitHub Issue for CodeGen
       if: failure() || github.event.workflow_run.conclusion == 'failure'
@@ -118,19 +127,31 @@ If this issue is not resolved within 1 hour, the system will automatically:
     - name: Check Pending CodeGen Tasks
       run: |
         echo "⏰ Checking for pending CodeGen tasks..."
-        node scripts/task-scheduler.js check
+        chmod +x scripts/task-scheduler.js 2>/dev/null || echo "Script permissions already set"
+        if node scripts/task-scheduler.js check; then
+          echo "✅ Task check completed successfully"
+        else
+          echo "⚠️ Task check encountered issues but continuing"
+        fi
 
     - name: Schedule New Task if Needed
       run: |
         echo "📋 Scheduling follow-up tasks if needed..."
-        # Schedule a follow-up task for this workflow
-        node scripts/task-scheduler.js schedule
-        echo "Follow-up task scheduled successfully"
+        # Schedule a follow-up task for this workflow with error handling
+        if node scripts/task-scheduler.js schedule; then
+          echo "✅ Follow-up task scheduled successfully"
+        else
+          echo "⚠️ Task scheduling encountered issues but continuing"
+        fi
 
     - name: Cleanup Old Tasks
       run: |
         echo "🧹 Cleaning up old completed tasks..."
-        node scripts/task-scheduler.js cleanup
+        if node scripts/task-scheduler.js cleanup; then
+          echo "✅ Task cleanup completed successfully"
+        else
+          echo "⚠️ Task cleanup encountered issues but continuing"
+        fi
 
   notify-codegen:
     runs-on: ubuntu-latest
