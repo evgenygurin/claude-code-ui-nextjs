@@ -11,6 +11,10 @@ on:
         description: 'Error details'
         required: false
         default: 'Manual CodeGen trigger'
+  pull_request:
+    branches: [main, master]
+  schedule:
+    - cron: '0 */6 * * *'
 
 jobs:
   pr-validation:
@@ -154,11 +158,13 @@ If this issue is not resolved within 1 hour, the system will automatically:
         # In a real implementation, this would call the CodeGen API
         # to notify about the workflow status and any pending tasks
         
+        echo "PR Validation Status: ${{ needs.pr-validation.result }}"
         echo "Workflow Status: ${{ needs.codegen-placeholder.result }}"
         echo "Task Check Status: ${{ needs.check-pending-tasks.result }}"
         echo "Repository: ${{ github.repository }}"
         echo "Branch: ${{ github.ref_name }}"
         echo "Commit: ${{ github.sha }}"
+        echo "Event: ${{ github.event_name }}"
         
         # This could trigger a webhook, API call, or create a GitHub comment
         # to notify CodeGen about the current status
