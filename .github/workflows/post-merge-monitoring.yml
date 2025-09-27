@@ -28,436 +28,281 @@ on:
 
 env:
   NODE_VERSION: '20'
-  MONITORING_ENABLED: true
 
 jobs:
   post-merge-health-check:
-    name: Post-Merge Health Assessment
+    name: Health Assessment
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
-    
+
     outputs:
       health-status: ${{ steps.health-assessment.outputs.status }}
       requires-intervention: ${{ steps.health-assessment.outputs.requires-intervention }}
       health-score: ${{ steps.health-assessment.outputs.score }}
       issues-detected: ${{ steps.health-assessment.outputs.issues }}
-      
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
-    - name: Install dependencies
-      run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-    - name: Initialize health monitoring
-      run: |
-        echo "🏥 Starting post-merge health assessment..."
-        echo "Repository: ${{ github.repository }}"
-        echo "Branch: ${{ github.ref_name }}"
-        echo "Commit: ${{ github.sha }}"
-        echo "Check type: ${{ github.event.inputs.check_type || 'comprehensive' }}"
-        
-        # Create monitoring directories
-        mkdir -p .health-monitoring/{reports,baselines,trends}
-        
-        # Set baseline timestamp for this check
-        echo "$(date -u)" > .health-monitoring/last-check.txt
+      - name: Initialize health monitoring
+        run: |
+          echo "🏥 Starting post-merge health assessment..."
+          echo "Repository: ${{ github.repository }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Check type: ${{ github.event.inputs.check_type || 'comprehensive' }}"
 
-    - name: Run comprehensive health checks
-      id: health-assessment
-      run: |
-        echo "🔍 Running health assessment..."
-        
-        # Initialize variables
-        HEALTH_SCORE=100
-        ISSUES=()
-        WARNINGS=()
-        CRITICAL_ISSUES=false
-        
-        echo "## 📊 Post-Merge Health Assessment Report" > health-report.md
-        echo "**Timestamp:** $(date -u)" >> health-report.md
-        echo "**Commit:** ${{ github.sha }}" >> health-report.md
-        echo "**Branch:** ${{ github.ref_name }}" >> health-report.md
-        echo "" >> health-report.md
-        
-        # 1. Code Quality Check
-        echo "### 🧹 Code Quality" >> health-report.md
-        if npm run lint 2>/dev/null; then
-          echo "- ✅ Linting: PASSED" >> health-report.md
-        else
-          echo "- ❌ Linting: FAILED" >> health-report.md
-          ISSUES+=("linting_failed")
-          HEALTH_SCORE=$((HEALTH_SCORE - 20))
-        fi
-        
-        if npm run type-check 2>/dev/null; then
-          echo "- ✅ Type checking: PASSED" >> health-report.md
-        else
-          echo "- ❌ Type checking: FAILED" >> health-report.md
-          ISSUES+=("type_check_failed")
-          HEALTH_SCORE=$((HEALTH_SCORE - 25))
-          CRITICAL_ISSUES=true
-        fi
-        
-        # 2. Test Suite Health
-        echo "### 🧪 Test Suite" >> health-report.md
-        if npm run test:ci 2>/dev/null; then
-          echo "- ✅ Tests: PASSED" >> health-report.md
-          
-          # Check coverage if available
-          if [ -f "coverage/lcov-report/index.html" ]; then
-            COVERAGE=$(grep -oP 'Functions.*?(\d+\.\d+)%' coverage/lcov-report/index.html | grep -oP '\d+\.\d+' | head -1 || echo "0")
-            if (( $(echo "$COVERAGE >= 80" | bc -l) )); then
-              echo "- ✅ Coverage: ${COVERAGE}% (Good)" >> health-report.md
-            else
-              echo "- ⚠️ Coverage: ${COVERAGE}% (Low)" >> health-report.md
-              WARNINGS+=("low_coverage")
-              HEALTH_SCORE=$((HEALTH_SCORE - 10))
+          # Create monitoring directories
+          mkdir -p .health-monitoring/{reports,baselines,trends}
+
+          # Set baseline timestamp for this check
+          echo "$(date -u)" > .health-monitoring/last-check.txt
+
+      - name: Run comprehensive health checks
+        id: health-assessment
+        run: |
+          echo "🔍 Running health assessment..."
+
+          # Initialize variables
+          HEALTH_SCORE=100
+          ISSUES=()
+          WARNINGS=()
+          CRITICAL_ISSUES=false
+
+          echo "## 📊 Post-Merge Health Assessment Report" > health-report.md
+          echo "**Timestamp:** $(date -u)" >> health-report.md
+          echo "**Commit:** ${{ github.sha }}" >> health-report.md
+          echo "**Branch:** ${{ github.ref_name }}" >> health-report.md
+          echo "" >> health-report.md
+
+          # 1. Code Quality Check
+          echo "### 🧹 Code Quality" >> health-report.md
+          if npm run lint 2>/dev/null; then
+            echo "- ✅ Linting: PASSED" >> health-report.md
+          else
+            echo "- ❌ Linting: FAILED" >> health-report.md
+            ISSUES+=("linting_failed")
+            HEALTH_SCORE=$((HEALTH_SCORE - 20))
+          fi
+
+          if npm run type-check 2>/dev/null; then
+            echo "- ✅ Type checking: PASSED" >> health-report.md
+          else
+            echo "- ❌ Type checking: FAILED" >> health-report.md
+            ISSUES+=("type_check_failed")
+            HEALTH_SCORE=$((HEALTH_SCORE - 25))
+            CRITICAL_ISSUES=true
+          fi
+
+          # 2. Test Suite Health
+          echo "### 🧪 Test Suite" >> health-report.md
+          if npm run test:ci 2>/dev/null; then
+            echo "- ✅ Tests: PASSED" >> health-report.md
+          else
+            echo "- ❌ Tests: FAILED" >> health-report.md
+            ISSUES+=("tests_failed")
+            HEALTH_SCORE=$((HEALTH_SCORE - 30))
+            CRITICAL_ISSUES=true
+          fi
+
+          # 3. Build Health
+          echo "### 🏗️ Build System" >> health-report.md
+          if npm run build 2>/dev/null; then
+            echo "- ✅ Build: SUCCESS" >> health-report.md
+            
+            # Check build size
+            if [ -d ".next" ]; then
+              BUILD_SIZE=$(du -sh .next | cut -f1)
+              echo "- ℹ️ Build size: $BUILD_SIZE" >> health-report.md
             fi
+          else
+            echo "- ❌ Build: FAILED" >> health-report.md
+            ISSUES+=("build_failed")
+            HEALTH_SCORE=$((HEALTH_SCORE - 35))
+            CRITICAL_ISSUES=true
           fi
-        else
-          echo "- ❌ Tests: FAILED" >> health-report.md
-          ISSUES+=("tests_failed")
-          HEALTH_SCORE=$((HEALTH_SCORE - 30))
-          CRITICAL_ISSUES=true
-        fi
-        
-        # 3. Build Health
-        echo "### 🏗️ Build System" >> health-report.md
-        if npm run build 2>/dev/null; then
-          echo "- ✅ Build: SUCCESS" >> health-report.md
-          
-          # Check build size
-          if [ -d ".next" ]; then
-            BUILD_SIZE=$(du -sh .next | cut -f1)
-            echo "- ℹ️ Build size: $BUILD_SIZE" >> health-report.md
+
+          # 4. Security Status
+          echo "### 🛡️ Security" >> health-report.md
+          if npm audit --audit-level=moderate 2>/dev/null; then
+            echo "- ✅ Security audit: CLEAN" >> health-report.md
+          else
+            echo "- ⚠️ Security audit: VULNERABILITIES DETECTED" >> health-report.md
+            WARNINGS+=("security_vulnerabilities")
+            HEALTH_SCORE=$((HEALTH_SCORE - 15))
           fi
-        else
-          echo "- ❌ Build: FAILED" >> health-report.md
-          ISSUES+=("build_failed")
-          HEALTH_SCORE=$((HEALTH_SCORE - 35))
-          CRITICAL_ISSUES=true
-        fi
-        
-        # 4. Security Status
-        echo "### 🛡️ Security" >> health-report.md
-        if npm audit --audit-level=moderate 2>/dev/null; then
-          echo "- ✅ Security audit: CLEAN" >> health-report.md
-        else
-          echo "- ⚠️ Security audit: VULNERABILITIES DETECTED" >> health-report.md
-          WARNINGS+=("security_vulnerabilities")
-          HEALTH_SCORE=$((HEALTH_SCORE - 15))
-        fi
-        
-        # 5. Git Status Check
-        echo "### 📝 Repository Health" >> health-report.md
-        
-        # Check for uncommitted changes
-        if [ -z "$(git status --porcelain)" ]; then
-          echo "- ✅ Working directory: CLEAN" >> health-report.md
-        else
-          echo "- ⚠️ Working directory: UNCOMMITTED CHANGES" >> health-report.md
-          WARNINGS+=("uncommitted_changes")
-        fi
-        
-        # Check recent activity
-        RECENT_COMMITS=$(git log --since="24 hours ago" --oneline | wc -l)
-        echo "- ℹ️ Recent commits (24h): $RECENT_COMMITS" >> health-report.md
-        
-        # 6. Performance Baseline
-        echo "### ⚡ Performance" >> health-report.md
-        
-        # Basic performance check (build time)
-        BUILD_START=$(date +%s)
-        npm run build >/dev/null 2>&1
-        BUILD_END=$(date +%s)
-        BUILD_TIME=$((BUILD_END - BUILD_START))
-        
-        echo "- ℹ️ Build time: ${BUILD_TIME}s" >> health-report.md
-        
-        if [ $BUILD_TIME -gt 300 ]; then  # 5 minutes
-          echo "- ⚠️ Build time is longer than expected" >> health-report.md
-          WARNINGS+=("slow_build")
-          HEALTH_SCORE=$((HEALTH_SCORE - 5))
-        fi
-        
-        # 7. Final Assessment
-        echo "### 📊 Overall Health" >> health-report.md
-        echo "- **Health Score:** $HEALTH_SCORE/100" >> health-report.md
-        
-        REQUIRES_INTERVENTION=false
-        if [ ${#ISSUES[@]} -gt 0 ]; then
-          echo "- **Issues Detected:** ${#ISSUES[@]}" >> health-report.md
-          echo "- **Issue Types:** ${ISSUES[*]}" >> health-report.md
-          REQUIRES_INTERVENTION=true
-        fi
-        
-        if [ ${#WARNINGS[@]} -gt 0 ]; then
-          echo "- **Warnings:** ${#WARNINGS[@]}" >> health-report.md
-          echo "- **Warning Types:** ${WARNINGS[*]}" >> health-report.md
-        fi
-        
-        # Determine overall status
-        if [ "$CRITICAL_ISSUES" = true ]; then
-          STATUS="critical"
-          echo "- **Status:** 🚨 CRITICAL - Immediate intervention required" >> health-report.md
-          REQUIRES_INTERVENTION=true
-        elif [ $HEALTH_SCORE -lt 70 ]; then
-          STATUS="degraded"
-          echo "- **Status:** ⚠️ DEGRADED - Issues need attention" >> health-report.md
-          REQUIRES_INTERVENTION=true
-        elif [ $HEALTH_SCORE -lt 90 ]; then
-          STATUS="warning"
-          echo "- **Status:** 🟡 WARNING - Minor issues detected" >> health-report.md
-        else
-          STATUS="healthy"
-          echo "- **Status:** ✅ HEALTHY - All systems operational" >> health-report.md
-        fi
-        
-        echo "### 🤖 Automated Actions" >> health-report.md
-        if [ "$REQUIRES_INTERVENTION" = true ] || [ "${{ github.event.inputs.force_codegen_trigger }}" = true ]; then
-          echo "- CodeGen intervention will be triggered" >> health-report.md
-        else
-          echo "- No immediate action required" >> health-report.md
-        fi
-        
-        # Set outputs
-        echo "status=$STATUS" >> $GITHUB_OUTPUT
-        echo "requires-intervention=$REQUIRES_INTERVENTION" >> $GITHUB_OUTPUT
-        echo "score=$HEALTH_SCORE" >> $GITHUB_OUTPUT
-        echo "issues=${ISSUES[*]}" >> $GITHUB_OUTPUT
-        
-        # Save report
-        cp health-report.md ".health-monitoring/reports/$(date +%Y%m%d-%H%M%S)-health-report.md"
-        
-        echo "🏥 Health assessment completed"
-        echo "Status: $STATUS"
-        echo "Score: $HEALTH_SCORE/100"
-        echo "Requires intervention: $REQUIRES_INTERVENTION"
 
-    - name: Schedule follow-up monitoring
-      if: always()
-      run: |
-        echo "⏰ Setting up continuous monitoring tasks..."
-        node scripts/task-scheduler.js schedule-health-monitoring \
-          --status="${{ steps.health-assessment.outputs.status }}" \
-          --score="${{ steps.health-assessment.outputs.score }}" \
-          --issues="${{ steps.health-assessment.outputs.issues }}"
+          # 5. Final Assessment
+          echo "### 📊 Overall Health" >> health-report.md
+          echo "- **Health Score:** $HEALTH_SCORE/100" >> health-report.md
 
-    - name: Upload health report
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: health-report-${{ github.run_number }}
-        path: |
-          health-report.md
-          .health-monitoring/reports/
-        retention-days: 30
+          REQUIRES_INTERVENTION=false
+          if [ ${#ISSUES[@]} -gt 0 ]; then
+            echo "- **Issues Detected:** ${#ISSUES[@]}" >> health-report.md
+            echo "- **Issue Types:** ${ISSUES[*]}" >> health-report.md
+            REQUIRES_INTERVENTION=true
+          fi
+
+          if [ ${#WARNINGS[@]} -gt 0 ]; then
+            echo "- **Warnings:** ${#WARNINGS[@]}" >> health-report.md
+            echo "- **Warning Types:** ${WARNINGS[*]}" >> health-report.md
+          fi
+
+          # Determine overall status
+          if [ "$CRITICAL_ISSUES" = true ]; then
+            STATUS="critical"
+            echo "- **Status:** 🚨 CRITICAL - Immediate intervention required" >> health-report.md
+            REQUIRES_INTERVENTION=true
+          elif [ $HEALTH_SCORE -lt 70 ]; then
+            STATUS="degraded"
+            echo "- **Status:** ⚠️ DEGRADED - Issues need attention" >> health-report.md
+            REQUIRES_INTERVENTION=true
+          elif [ $HEALTH_SCORE -lt 90 ]; then
+            STATUS="warning"
+            echo "- **Status:** 🟡 WARNING - Minor issues detected" >> health-report.md
+          else
+            STATUS="healthy"
+            echo "- **Status:** ✅ HEALTHY - All systems operational" >> health-report.md
+          fi
+
+          # Set outputs
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+          echo "requires-intervention=$REQUIRES_INTERVENTION" >> $GITHUB_OUTPUT
+          echo "score=$HEALTH_SCORE" >> $GITHUB_OUTPUT
+          echo "issues=${ISSUES[*]}" >> $GITHUB_OUTPUT
+
+          # Save report
+          cp health-report.md ".health-monitoring/reports/$(date +%Y%m%d-%H%M%S)-health-report.md"
+
+          echo "🏥 Health assessment completed"
+          echo "Status: $STATUS"
+          echo "Score: $HEALTH_SCORE/100"
+          echo "Requires intervention: $REQUIRES_INTERVENTION"
+
+      - name: Upload health report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: health-report-${{ github.run_number }}
+          path: |
+            health-report.md
+            .health-monitoring/reports/
+          retention-days: 30
 
   trigger-codegen-intervention:
     name: CodeGen Intervention
     runs-on: ubuntu-latest
     needs: [post-merge-health-check]
     if: needs.post-merge-health-check.outputs.requires-intervention == 'true' || github.event.inputs.force_codegen_trigger == 'true'
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
-    - name: Install dependencies
-      run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-    - name: Trigger CodeGen analysis
-      run: |
-        echo "🚨 Health issues detected - triggering CodeGen intervention"
-        
-        # Prepare detailed context for CodeGen
-        HEALTH_STATUS="${{ needs.post-merge-health-check.outputs.health-status }}"
-        HEALTH_SCORE="${{ needs.post-merge-health-check.outputs.health-score }}"
-        ISSUES="${{ needs.post-merge-health-check.outputs.issues-detected }}"
-        
-        # Use the enhanced error handler
-        node scripts/codegen-error-handler.js "post_merge_health_issues" \
-          "Health status: $HEALTH_STATUS, Score: $HEALTH_SCORE/100, Issues: $ISSUES"
+      - name: Trigger CodeGen analysis
+        run: |
+          echo "🚨 Health issues detected - triggering CodeGen intervention"
 
-    - name: Create detailed GitHub issue
-      if: needs.post-merge-health-check.outputs.health-status == 'critical'
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const healthStatus = '${{ needs.post-merge-health-check.outputs.health-status }}';
-          const healthScore = '${{ needs.post-merge-health-check.outputs.health-score }}';
-          const issues = '${{ needs.post-merge-health-check.outputs.issues-detected }}';
-          const runUrl = `${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`;
-          
-          const issueBody = `🚨 **Critical Post-Merge Health Issues Detected**
+          # Prepare detailed context for CodeGen
+          HEALTH_STATUS="${{ needs.post-merge-health-check.outputs.health-status }}"
+          HEALTH_SCORE="${{ needs.post-merge-health-check.outputs.health-score }}"
+          ISSUES="${{ needs.post-merge-health-check.outputs.issues-detected }}"
 
-**Health Assessment Results:**
-- **Status:** ${healthStatus.toUpperCase()}
-- **Health Score:** ${healthScore}/100
-- **Issues Detected:** ${issues || 'None specified'}
-- **Monitoring Run:** [${runUrl}](${runUrl})
-- **Branch:** ${{ github.ref_name }}
-- **Commit:** ${{ github.sha }}
-- **Timestamp:** ${new Date().toISOString()}
+          # Use the enhanced error handler
+          node scripts/codegen-error-handler.js "post_merge_health_issues" \
+            "Health status: $HEALTH_STATUS, Score: $HEALTH_SCORE/100, Issues: $ISSUES"
 
----
+      - name: Create detailed GitHub issue
+        if: needs.post-merge-health-check.outputs.health-status == 'critical'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const healthStatus = '${{ needs.post-merge-health-check.outputs.health-status }}';
+            const healthScore = '${{ needs.post-merge-health-check.outputs.health-score }}';
+            const issues = '${{ needs.post-merge-health-check.outputs.issues-detected }}';
+            const runUrl = `${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`;
 
-@codegen **CRITICAL INTERVENTION REQUIRED**
+            const issueBody = `🚨 **Critical Post-Merge Health Issues Detected**
 
-## 🎯 Required Actions:
-1. **🔍 Immediate Analysis:** Review the health monitoring results and identify root causes
-2. **🛠️ Fix Critical Issues:** Address all failing components (build, tests, type-checking)
-3. **🧪 Comprehensive Testing:** Ensure all fixes are properly tested
-4. **📋 Quality Assurance:** Verify that the health score returns to >90
-5. **📝 Documentation:** Document any significant changes or fixes applied
-6. **🔄 Follow-up Monitoring:** Schedule additional health checks to prevent regression
+            **Health Assessment Results:**
+            - **Status:** ${healthStatus.toUpperCase()}
+            - **Health Score:** ${healthScore}/100
+            - **Issues Detected:** ${issues || 'None specified'}
+            - **Monitoring Run:** [${runUrl}](${runUrl})
+            - **Branch:** ${{ github.ref_name }}
+            - **Commit:** ${{ github.sha }}
+            - **Timestamp:** ${new Date().toISOString()}
 
-## 📊 Context:
-- **Project:** Claude Code UI (Next.js 15)
-- **Monitoring System:** Post-merge health assessment
-- **CI/CD Platform:** GitHub Actions + CircleCI
-- **Health Threshold:** Critical issues require immediate attention
-- **Auto-remediation:** Enabled via CodeGen integration
+            ---
 
-## 🚨 Escalation Rules:
-- If this issue is not resolved within 2 hours, additional escalation will be triggered
-- Critical health status requires immediate attention to prevent production issues
-- System will continue monitoring and creating follow-up tasks until resolution
+            @codegen **CRITICAL INTERVENTION REQUIRED**
 
-## 📈 Success Criteria:
-- [ ] All CI/CD checks passing
-- [ ] Health score ≥ 90/100
-- [ ] No critical issues remaining
-- [ ] Comprehensive test coverage maintained
-- [ ] Build and deployment systems operational
+            **This is an automated post-merge health monitoring alert.**`;
 
-**This is an automated critical alert from the Post-Merge Health Monitoring System.**`;
-
-          await github.rest.issues.create({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            title: `🚨 CRITICAL: Post-Merge Health Issues - Score: ${healthScore}/100`,
-            body: issueBody,
-            labels: ['critical', 'health-monitoring', 'automated', 'codegen', 'post-merge']
-          });
-
-  continuous-monitoring-setup:
-    name: Setup Continuous Monitoring
-    runs-on: ubuntu-latest
-    needs: [post-merge-health-check]
-    if: always()
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-
-    - name: Install dependencies
-      run: npm ci
-
-    - name: Configure long-term monitoring
-      run: |
-        echo "🔧 Setting up continuous health monitoring..."
-        
-        # Schedule various monitoring tasks based on current health
-        HEALTH_STATUS="${{ needs.post-merge-health-check.outputs.health-status }}"
-        
-        case "$HEALTH_STATUS" in
-          "critical")
-            # Frequent monitoring for critical issues
-            node scripts/task-scheduler.js schedule --type="health_check" --interval="30m"
-            node scripts/task-scheduler.js schedule --type="escalation_check" --interval="2h"
-            ;;
-          "degraded"|"warning")
-            # Regular monitoring for degraded health
-            node scripts/task-scheduler.js schedule --type="health_check" --interval="2h"
-            node scripts/task-scheduler.js schedule --type="improvement_check" --interval="6h"
-            ;;
-          *)
-            # Standard monitoring for healthy systems
-            node scripts/task-scheduler.js schedule --type="health_check" --interval="6h"
-            node scripts/task-scheduler.js schedule --type="routine_check" --interval="24h"
-            ;;
-        esac
-        
-        echo "✅ Continuous monitoring configured for status: $HEALTH_STATUS"
-
-    - name: Update health baseline
-      run: |
-        echo "📊 Updating health baselines..."
-        
-        # Store current metrics as baseline for future comparisons
-        mkdir -p .health-monitoring/baselines
-        
-        echo "${{ needs.post-merge-health-check.outputs.health-score }}" > \
-          .health-monitoring/baselines/health-score-$(date +%Y%m%d).txt
-        
-        echo "${{ needs.post-merge-health-check.outputs.health-status }}" > \
-          .health-monitoring/baselines/health-status-$(date +%Y%m%d).txt
-        
-        # Commit baselines if they've changed significantly
-        if git diff --quiet .health-monitoring/baselines/ 2>/dev/null; then
-          echo "No significant baseline changes"
-        else
-          echo "Baseline changes detected - would commit in real scenario"
-        fi
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚨 Critical Health Issues: ${healthStatus} - ${new Date().toISOString().split('T')[0]}`,
+              body: issueBody,
+              labels: ['post-merge', 'health-monitoring', 'critical', 'codegen', 'automated']
+            });
 
   notification-summary:
     name: Health Monitoring Summary
     runs-on: ubuntu-latest
-    needs: [post-merge-health-check, trigger-codegen-intervention, continuous-monitoring-setup]
+    needs: [post-merge-health-check, trigger-codegen-intervention]
     if: always()
-    
+
     steps:
-    - name: Generate summary
-      run: |
-        echo "## 🏥 Post-Merge Health Monitoring Summary" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Repository:** ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
-        echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-        echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-        echo "**Workflow:** ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### Results" >> $GITHUB_STEP_SUMMARY
-        echo "- **Health Status:** ${{ needs.post-merge-health-check.outputs.health-status || 'Unknown' }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Health Score:** ${{ needs.post-merge-health-check.outputs.health-score || 'N/A' }}/100" >> $GITHUB_STEP_SUMMARY
-        echo "- **Intervention Required:** ${{ needs.post-merge-health-check.outputs.requires-intervention || 'Unknown' }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Issues Detected:** ${{ needs.post-merge-health-check.outputs.issues-detected || 'None' }}" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        
-        if [ "${{ needs.trigger-codegen-intervention.result }}" = "success" ]; then
-          echo "- ✅ CodeGen intervention triggered successfully" >> $GITHUB_STEP_SUMMARY
-        elif [ "${{ needs.post-merge-health-check.outputs.requires-intervention }}" = "true" ]; then
-          echo "- ⚠️ CodeGen intervention was required but may have failed" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
-        echo "- Continuous monitoring has been configured" >> $GITHUB_STEP_SUMMARY
-        echo "- Follow-up checks scheduled based on health status" >> $GITHUB_STEP_SUMMARY
-        
-        if [ "${{ needs.post-merge-health-check.outputs.requires-intervention }}" = "true" ]; then
-          echo "- 🚨 **Action Required:** Address the identified health issues" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "- ✅ No immediate action required" >> $GITHUB_STEP_SUMMARY
-        fi
+      - name: Generate summary
+        run: |
+          echo "## 🏥 Post-Merge Health Monitoring Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Repository:** ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Workflow:** ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Results" >> $GITHUB_STEP_SUMMARY
+          echo "- **Health Status:** ${{ needs.post-merge-health-check.outputs.health-status || 'Unknown' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Health Score:** ${{ needs.post-merge-health-check.outputs.health-score || 'N/A' }}/100" >> $GITHUB_STEP_SUMMARY
+          echo "- **Intervention Required:** ${{ needs.post-merge-health-check.outputs.requires-intervention || 'Unknown' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Issues Detected:** ${{ needs.post-merge-health-check.outputs.issues-detected || 'None' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.trigger-codegen-intervention.result }}" = "success" ]; then
+            echo "- ✅ CodeGen intervention triggered successfully" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.post-merge-health-check.outputs.requires-intervention }}" = "true" ]; then
+            echo "- ⚠️ CodeGen intervention was required but may have failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "- Continuous monitoring has been configured" >> $GITHUB_STEP_SUMMARY
+          echo "- Follow-up checks scheduled based on health status" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.post-merge-health-check.outputs.requires-intervention }}" = "true" ]; then
+            echo "- 🚨 **Action Required:** Address the identified health issues" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ✅ No immediate action required" >> $GITHUB_STEP_SUMMARY
+          fi
