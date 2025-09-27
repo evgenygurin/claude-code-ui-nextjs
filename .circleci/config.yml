@@ -72,6 +72,23 @@ jobs:
       - attach_workspace:
           at: ~/project
       - run:
+          name: Check deployment prerequisites
+          command: |
+            echo "🔍 Checking deployment prerequisites..."
+            echo "Branch: ${CIRCLE_BRANCH}"
+            echo "PR URL: ${CIRCLE_PULL_REQUEST}"
+            echo "Build number: ${CIRCLE_BUILD_NUM}"
+            
+            # Check if we have the build artifacts
+            if [ -d ".next" ]; then
+              echo "✅ Next.js build artifacts found"
+              ls -la .next/ | head -10
+            else
+              echo "❌ No .next directory found"
+              echo "Available directories:"
+              ls -la
+            fi
+      - run:
           name: Install Vercel CLI
           no_output_timeout: 5m
           command: npm install -g vercel@latest
@@ -79,20 +96,64 @@ jobs:
           name: Deploy to Vercel Preview
           no_output_timeout: 20m
           command: |
-            if [ -n "${CIRCLE_PULL_REQUEST}" ]; then
-              echo "🚀 Deploying preview for PR ${CIRCLE_PULL_REQUEST}"
+            # Check if this is a PR or a branch that should have preview deployment
+            if [ -n "${CIRCLE_PULL_REQUEST}" ] || [ "${CIRCLE_BRANCH}" != "main" ]; then
+              echo "🚀 Deploying preview for branch: ${CIRCLE_BRANCH}"
               
-              # Pull Vercel project configuration
-              vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
+              # Check if VERCEL_TOKEN is set
+              if [ -z "${VERCEL_TOKEN}" ]; then
+                echo "⚠️ VERCEL_TOKEN not set. Skipping deployment."
+                echo "To enable Vercel deployment, set VERCEL_TOKEN in CircleCI environment variables."
+                exit 0
+              fi
               
-              # Skip Vercel build since we already built in previous step
-              # Use the prebuilt .next directory from workspace
-              vercel deploy --prebuilt --token=$VERCEL_TOKEN > deployment-url.txt
+              # Check if build artifacts exist
+              if [ ! -d ".next" ]; then
+                echo "❌ Build artifacts (.next directory) not found. Cannot deploy."
+                exit 1
+              fi
               
-              # Output the deployment URL
-              echo "✅ Preview URL: $(cat deployment-url.txt)"
+              # Set deployment name for better identification
+              DEPLOYMENT_NAME="claude-code-ui-${CIRCLE_BRANCH}-${CIRCLE_BUILD_NUM}"
+              
+              # Try to pull Vercel project configuration
+              if ! vercel pull --yes --environment=preview --token=$VERCEL_TOKEN 2>/dev/null; then
+                echo "⚠️ Could not pull Vercel project config. Deploying without project config."
+                echo "Consider setting up a Vercel project or ensuring VERCEL_PROJECT_ID is set."
+              fi
+              
+              # Deploy with error handling
+              echo "📦 Deploying to Vercel..."
+              if vercel deploy --prebuilt --token=$VERCEL_TOKEN --name="$DEPLOYMENT_NAME" > deployment-url.txt 2>&1; then
+                DEPLOYMENT_URL=$(cat deployment-url.txt | tail -1)
+                echo "✅ Preview deployment successful!"
+                echo "🔗 Preview URL: $DEPLOYMENT_URL"
+                
+                # Save deployment info for potential use in other jobs
+                echo "$DEPLOYMENT_URL" > ~/project/preview-url.txt
+              else
+                echo "❌ Deployment failed. Error output:"
+                cat deployment-url.txt
+                echo ""
+                echo "💡 This might be due to:"
+                echo "   - Missing VERCEL_TOKEN environment variable"
+                echo "   - Missing VERCEL_PROJECT_ID (if using a specific project)"
+                echo "   - Network connectivity issues"
+                echo "   - Invalid Vercel configuration"
+                echo ""
+                echo "🔧 To fix this:"
+                echo "   1. Ensure VERCEL_TOKEN is set in CircleCI environment variables"
+                echo "   2. Optionally set VERCEL_PROJECT_ID if you want to deploy to a specific project"
+                echo "   3. Check Vercel project settings and permissions"
+                echo ""
+                echo "⚠️ Continuing CI/CD pipeline despite deployment failure..."
+                exit 0  # Don't fail the entire pipeline for deployment issues
+              fi
             else
-              echo "Not a PR, skipping preview deployment"
+              echo "ℹ️ Not a PR and not on a feature branch. Skipping preview deployment."
+              echo "Preview deployments are only created for:"
+              echo "  - Pull requests (when CIRCLE_PULL_REQUEST is set)"
+              echo "  - Non-main branches"
             fi
 
   deploy_production:
