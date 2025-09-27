@@ -226,7 +226,10 @@ export class CodeGenOrchestrator extends EventEmitter {
           repoId: trigger.repoId,
           context: {
             ...trigger.context,
-            analysisResults: analysisResult.result
+            integrationData: {
+              ...trigger.context?.integrationData,
+              analysisResults: analysisResult.result
+            }
           },
           priority: 'high',
           parentAgentId: analysisAgent.id
@@ -278,7 +281,10 @@ export class CodeGenOrchestrator extends EventEmitter {
           repoId: trigger.repoId,
           context: {
             ...trigger.context,
-            buildAnalysis: analysisResult.result
+            integrationData: {
+              ...trigger.context?.integrationData,
+              buildAnalysis: analysisResult.result
+            }
           },
           priority: 'high',
           parentAgentId: analysisAgent.id
@@ -545,7 +551,7 @@ export class CodeGenOrchestrator extends EventEmitter {
   private convertToAgentResult(agentRun: AgentRun): AgentResult {
     return {
       agentId: agentRun.id,
-      type: agentRun.prompt.split(' ')[0].toLowerCase(),
+      type: agentRun.prompt?.split(' ')[0]?.toLowerCase() || 'unknown',
       success: agentRun.result?.success || false,
       duration: agentRun.duration || 0,
       cost: agentRun.cost || 0,
