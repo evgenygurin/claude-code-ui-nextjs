@@ -1,11 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import Sidebar from '@/components/layout/sidebar';
 
-// Skip sidebar tests in CI due to complex icon mocking requirements
-const isCI = process.env.CI === 'true' || process.env.NODE_ENV === 'test';
-
-const describeOrSkip = isCI ? describe.skip : describe;
-
 // Mock framer-motion
 jest.mock('framer-motion', () => ({
   motion: {
@@ -15,7 +10,30 @@ jest.mock('framer-motion', () => ({
   AnimatePresence: ({ children }: any) => children,
 }));
 
-describeOrSkip('Sidebar', () => {
+// Mock lucide-react icons
+jest.mock('lucide-react', () => {
+  const MockIcon = ({ className, ...props }: any) => (
+    <svg className={className} {...props} data-testid="mock-icon">
+      <title>Mock Icon</title>
+    </svg>
+  );
+  
+  return {
+    ChevronLeft: MockIcon,
+    ChevronRight: MockIcon,
+    Home: MockIcon,
+    FolderOpen: MockIcon,
+    FileText: MockIcon,
+    MessageSquare: MockIcon,
+    Terminal: MockIcon,
+    GitBranch: MockIcon,
+    Search: MockIcon,
+    Plus: MockIcon,
+    Settings: MockIcon,
+  };
+});
+
+describe('Sidebar', () => {
   const defaultProps = {
     isCollapsed: false,
     onToggle: jest.fn(),

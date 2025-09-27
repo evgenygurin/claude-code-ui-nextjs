@@ -88,13 +88,25 @@ global.scrollTo = jest.fn()
 
 // Mock lucide-react icons
 jest.mock('lucide-react', () => {
-  const MockIcon = ({ className, 'data-testid': testId, ...props }) => 
+  const MockIcon = React.forwardRef(({ className, 'data-testid': testId, ...props }, ref) => 
     React.createElement('svg', {
+      ref,
       className,
       'data-testid': testId,
       'aria-label': props['aria-label'] || 'icon',
+      width: '24',
+      height: '24',
+      viewBox: '0 0 24 24',
+      fill: 'none',
+      stroke: 'currentColor',
+      strokeWidth: '2',
+      strokeLinecap: 'round',
+      strokeLinejoin: 'round',
       ...props
     })
+  )
+  
+  MockIcon.displayName = 'MockIcon'
   
   return {
     ChevronLeft: MockIcon,
@@ -127,17 +139,17 @@ jest.mock('lucide-react', () => {
 // Mock framer-motion
 jest.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, ...props }) => React.createElement('div', props, children),
-    button: ({ children, ...props }) => React.createElement('button', props, children),
-    span: ({ children, ...props }) => React.createElement('span', props, children),
-    p: ({ children, ...props }) => React.createElement('p', props, children),
-    h1: ({ children, ...props }) => React.createElement('h1', props, children),
-    h2: ({ children, ...props }) => React.createElement('h2', props, children),
-    h3: ({ children, ...props }) => React.createElement('h3', props, children),
-    section: ({ children, ...props }) => React.createElement('section', props, children),
-    article: ({ children, ...props }) => React.createElement('article', props, children),
-    aside: ({ children, ...props }) => React.createElement('aside', props, children),
-    nav: ({ children, ...props }) => React.createElement('nav', props, children),
+    div: React.forwardRef(({ children, ...props }, ref) => React.createElement('div', { ref, ...props }, children)),
+    button: React.forwardRef(({ children, ...props }, ref) => React.createElement('button', { ref, ...props }, children)),
+    span: React.forwardRef(({ children, ...props }, ref) => React.createElement('span', { ref, ...props }, children)),
+    p: React.forwardRef(({ children, ...props }, ref) => React.createElement('p', { ref, ...props }, children)),
+    h1: React.forwardRef(({ children, ...props }, ref) => React.createElement('h1', { ref, ...props }, children)),
+    h2: React.forwardRef(({ children, ...props }, ref) => React.createElement('h2', { ref, ...props }, children)),
+    h3: React.forwardRef(({ children, ...props }, ref) => React.createElement('h3', { ref, ...props }, children)),
+    section: React.forwardRef(({ children, ...props }, ref) => React.createElement('section', { ref, ...props }, children)),
+    article: React.forwardRef(({ children, ...props }, ref) => React.createElement('article', { ref, ...props }, children)),
+    aside: React.forwardRef(({ children, ...props }, ref) => React.createElement('aside', { ref, ...props }, children)),
+    nav: React.forwardRef(({ children, ...props }, ref) => React.createElement('nav', { ref, ...props }, children)),
   },
   AnimatePresence: ({ children }) => children,
   useAnimation: () => ({

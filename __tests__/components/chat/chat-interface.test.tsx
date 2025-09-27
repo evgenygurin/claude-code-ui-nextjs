@@ -78,6 +78,11 @@ describe('ChatInterface', () => {
   });
 
   it('should simulate AI response after delay', async () => {
+    // Mock Math.random to ensure consistent response
+    const mockMath = Object.create(global.Math);
+    mockMath.random = jest.fn(() => 0); // This will select the first response
+    global.Math = mockMath;
+    
     render(<ChatInterface />);
     
     const input = screen.getByPlaceholderText(/Type your message/);
@@ -96,15 +101,13 @@ describe('ChatInterface', () => {
     
     await waitFor(() => {
       expect(screen.queryByText('Claude is thinking...')).not.toBeInTheDocument();
-    }, { timeout: 3000 });
+    });
     
-    // Should show simulated response (more flexible matching)
-    await waitFor(() => {
-      const responseElements = screen.queryAllByText((content, element) => {
-        return content && content.includes('Test command');
-      });
-      expect(responseElements.length).toBeGreaterThan(0);
-    }, { timeout: 1000 });
+    // Should show simulated response
+    expect(screen.getByText(/I understand you want to/)).toBeInTheDocument();
+    
+    // Restore Math.random
+    global.Math = Math;
   });
 
   it('should copy message content', () => {
