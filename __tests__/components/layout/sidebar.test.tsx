@@ -2,18 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import Sidebar from '@/components/layout/sidebar';
 
-// Mock framer-motion
-jest.mock('framer-motion', () => ({
-  motion: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-    button: ({ children, ...props }: any) => (
-      <button {...props}>{children}</button>
-    ),
-    nav: ({ children, ...props }: any) => <nav {...props}>{children}</nav>,
-    span: ({ children, ...props }: any) => <span {...props}>{children}</span>,
-  },
-  AnimatePresence: ({ children }: any) => children,
-}));
+// framer-motion is already mocked globally in jest.setup.js
 
 // Mock Button component
 jest.mock('@/components/ui/button', () => ({
@@ -81,9 +70,7 @@ describe('Sidebar', () => {
   it('should call onToggle when toggle button is clicked', () => {
     render(<Sidebar {...defaultProps} />);
 
-    const toggleButton = screen.getByRole('button', {
-      name: /collapse sidebar/i,
-    });
+    const toggleButton = screen.getByRole('button', { name: /collapse sidebar/i });
     fireEvent.click(toggleButton);
 
     expect(defaultProps.onToggle).toHaveBeenCalledTimes(1);

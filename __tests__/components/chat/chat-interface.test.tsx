@@ -19,10 +19,13 @@ describe('ChatInterface', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     jest.clearAllMocks();
+    // Mock Math.random to return consistent results
+    jest.spyOn(Math, 'random').mockReturnValue(0);
   });
 
   afterEach(() => {
     jest.useRealTimers();
+    jest.restoreAllMocks();
   });
 
   it('should render with initial welcome message', () => {
@@ -90,20 +93,28 @@ describe('ChatInterface', () => {
     
     // Should show loading initially
     expect(screen.getByText('Claude is thinking...')).toBeInTheDocument();
-    
-    // Fast-forward time to simulate response
-    await act(async () => {
-      jest.advanceTimersByTime(2500);
+
+    // Fast-forward time to simulate response (timeout is 1500 + Math.random() * 1000 = 2000ms with mocked random)
+    act(() => {
+      jest.advanceTimersByTime(2000);
     });
 
     await waitFor(() => {
       expect(screen.queryByText('Claude is thinking...')).not.toBeInTheDocument();
     });
 
-    // Should show simulated response - be more specific to avoid multiple matches
+    // Should show simulated response (match any of the possible responses)
     await waitFor(() => {
-      const messages = screen.getAllByText(/Test command/);
-      expect(messages.length).toBeGreaterThanOrEqual(1);
+      const responsePatterns = [
+        /I understand you want to/,
+        /Great question about/,
+        /Thanks for asking about/,
+        /I see you're working on/
+      ];
+      const hasResponse = responsePatterns.some(pattern =>
+        screen.queryByText(pattern) !== null
+      );
+      expect(hasResponse).toBe(true);
     });
   });
 
@@ -168,7 +179,7 @@ describe('ChatInterface', () => {
     expect(input).toHaveValue('');
     
     // Send button should show stop icon while loading
-    const stopButton = screen.getByRole('button', { name: /stop/i });
-    expect(stopButton).toBeInTheDocument();
+    const stopIcon = screen.getByRole('button', { name: /stop/i });
+    expect(stopIcon).toBeInTheDocument();
   });
 });

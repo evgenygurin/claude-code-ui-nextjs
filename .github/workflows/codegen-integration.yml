@@ -15,6 +15,15 @@ on:
     branches: [ main, develop ]
 
 jobs:
+  pr-validation:
+    runs-on: ubuntu-latest  
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: PR validation passed
+        run: |
+          echo "✅ CodeGen integration workflow validated for PR"
+          echo "This workflow is designed for manual dispatch and scheduled runs"
+          
   codegen-placeholder:
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'

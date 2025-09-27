@@ -1,0 +1,53 @@
+{
+  "timestamp": "2025-09-27T01:43:45.898Z",
+  "results": {
+    "VERCEL_TOKEN": {
+      "name": "Vercel Token",
+      "required": true,
+      "present": true,
+      "valid": true,
+      "description": "Token for Vercel deployments"
+    },
+    "VERCEL_ORG_ID": {
+      "name": "Vercel Organization ID",
+      "required": true,
+      "present": true,
+      "valid": true,
+      "description": "Vercel organization identifier"
+    },
+    "VERCEL_PROJECT_ID": {
+      "name": "Vercel Project ID",
+      "required": true,
+      "present": true,
+      "valid": true,
+      "description": "Vercel project identifier"
+    },
+    "GITHUB_TOKEN": {
+      "name": "GitHub Token",
+      "required": false,
+      "present": true,
+      "valid": true,
+      "description": "GitHub API token for repository access"
+    },
+    "SENTRY_AUTH_TOKEN": {
+      "name": "Sentry Auth Token",
+      "required": false,
+      "present": true,
+      "valid": true,
+      "description": "Token for Sentry release tracking"
+    },
+    "CODECOV_TOKEN": {
+      "name": "Codecov Token",
+      "required": false,
+      "present": false,
+      "valid": true,
+      "description": "Token for code coverage reporting"
+    }
+  },
+  "summary": {
+    "allValid": true,
+    "requiredValid": true,
+    "totalTokens": 6,
+    "validTokens": 6
+  }
+}

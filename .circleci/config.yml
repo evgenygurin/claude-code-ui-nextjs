@@ -259,25 +259,53 @@ jobs:
             if [ -n "${CIRCLE_PULL_REQUEST}" ]; then
               echo "🚀 Deploying preview for PR ${CIRCLE_PULL_REQUEST}"
               
+              # Check if required environment variables are set
+              if [ -z "$VERCEL_TOKEN" ]; then
+                echo "❌ VERCEL_TOKEN is not set. Skipping deployment."
+                echo "⚠️  Preview deployment requires valid Vercel token"
+                exit 0
+              fi
+              
+              if [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+                echo "❌ VERCEL_ORG_ID or VERCEL_PROJECT_ID is not set. Skipping deployment."
+                echo "⚠️  Preview deployment requires Vercel organization and project IDs"
+                exit 0
+              fi
+              
+              # Test Vercel authentication
+              echo "🔍 Testing Vercel authentication..."
+              if ! vercel whoami --token=$VERCEL_TOKEN >/dev/null 2>&1; then
+                echo "❌ Vercel token is invalid or expired. Skipping deployment."
+                echo "⚠️  Please update the VERCEL_TOKEN environment variable"
+                echo "💡 Hint: Generate a new token at https://vercel.com/account/tokens"
+                exit 0
+              fi
+              
+              echo "✅ Vercel authentication successful"
+              
               # Pull Vercel project configuration
-              vercel pull --yes --environment=preview --token=$VERCEL_TOKEN || {
-                echo "❌ Failed to pull Vercel configuration"
-                echo "This might be due to missing project configuration or invalid token"
-                exit 0
-              }
-              
-              # Skip Vercel build since we already built in previous step
-              # Use the prebuilt .next directory from workspace
-              vercel deploy --prebuilt --token=$VERCEL_TOKEN > deployment-url.txt || {
-                echo "❌ Vercel deployment failed"
-                echo "Preview deployment is optional, continuing with CI/CD pipeline"
-                exit 0
-              }
-              
-              # Output the deployment URL
-              echo "✅ Preview URL: $(cat deployment-url.txt)"
+              echo "📥 Pulling Vercel project configuration..."
+              if ! vercel pull --yes --environment=preview --token=$VERCEL_TOKEN; then
+                echo "❌ Failed to pull Vercel configuration. Check project settings."
+                exit 1
+              fi
+
+              # Deploy to Vercel
+              echo "🚀 Deploying to Vercel preview..."
+              if vercel deploy --prebuilt --token=$VERCEL_TOKEN > deployment-url.txt 2>&1; then
+                DEPLOY_URL=$(cat deployment-url.txt | tail -1)
+                echo "✅ Preview deployed successfully!"
+                echo "🔗 Preview URL: $DEPLOY_URL"
+
+                # Save deployment URL for potential use by other jobs
+                echo "$DEPLOY_URL" > .vercel-preview-url
+              else
+                echo "❌ Vercel deployment failed:"
+                cat deployment-url.txt
+                exit 1
+              fi
             else
-              echo "Not a PR, skipping preview deployment"
+              echo "ℹ️  Not a PR, skipping preview deployment"
             fi
 
   deploy_production:
@@ -316,15 +344,51 @@ jobs:
           command: |
             echo "🚀 Deploying to production"
 
+            # Check if required environment variables are set
+            if [ -z "$VERCEL_TOKEN" ]; then
+              echo "❌ VERCEL_TOKEN is not set. Cannot deploy to production."
+              echo "⚠️  Production deployment requires valid Vercel token"
+              exit 1
+            fi
+
+            if [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+              echo "❌ VERCEL_ORG_ID or VERCEL_PROJECT_ID is not set. Cannot deploy to production."
+              echo "⚠️  Production deployment requires Vercel organization and project IDs"
+              exit 1
+            fi
+
+            # Test Vercel authentication
+            echo "🔍 Testing Vercel authentication..."
+            if ! vercel whoami --token=$VERCEL_TOKEN >/dev/null 2>&1; then
+              echo "❌ Vercel token is invalid or expired. Cannot deploy to production."
+              echo "⚠️  Please update the VERCEL_TOKEN environment variable"
+              echo "💡 Hint: Generate a new token at https://vercel.com/account/tokens"
+              exit 1
+            fi
+
+            echo "✅ Vercel authentication successful"
+
             # Pull Vercel project configuration
-            vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+            echo "📥 Pulling Vercel project configuration..."
+            if ! vercel pull --yes --environment=production --token=$VERCEL_TOKEN; then
+              echo "❌ Failed to pull Vercel configuration. Check project settings."
+              exit 1
+            fi
 
-            # Skip Vercel build since we already built in previous step
-            # Use the prebuilt .next directory from workspace
-            vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN > deployment-url.txt
+            # Deploy to Vercel
+            echo "🚀 Deploying to Vercel production..."
+            if vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN > deployment-url.txt 2>&1; then
+              DEPLOY_URL=$(cat deployment-url.txt | tail -1)
+              echo "✅ Production deployed successfully!"
+              echo "🔗 Production URL: $DEPLOY_URL"
 
-            # Output the deployment URL
-            echo "✅ Production URL: $(cat deployment-url.txt)"
+              # Save deployment URL for potential use by other jobs
+              echo "$DEPLOY_URL" > .vercel-production-url
+            else
+              echo "❌ Vercel production deployment failed:"
+              cat deployment-url.txt
+              exit 1
+            fi
 
   vulnerability_scan:
     executor: node-executor
