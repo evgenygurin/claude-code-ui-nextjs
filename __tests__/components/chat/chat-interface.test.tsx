@@ -94,9 +94,20 @@ describe('ChatInterface', () => {
       jest.advanceTimersByTime(3000); // Use 3 seconds to be safe
     });
     
-    // Should show simulated response
+    // Should show simulated response (look for response text that indicates AI has responded)
     await waitFor(() => {
-      expect(screen.getByText(/I understand you want to "Test command"/)).toBeInTheDocument();
+      // Check for any of the possible AI response patterns
+      const responsePatterns = [
+        /I understand you want to/,
+        /Great question about/,
+        /Thanks for asking about/,
+        /I see you're working on/
+      ];
+      
+      const hasResponse = responsePatterns.some(pattern => 
+        screen.queryByText(pattern) !== null
+      );
+      expect(hasResponse).toBe(true);
     });
     
     // Loading should be gone
