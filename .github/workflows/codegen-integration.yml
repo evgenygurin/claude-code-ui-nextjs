@@ -11,11 +11,14 @@ on:
         description: 'Error details'
         required: false
         default: 'Manual CodeGen trigger'
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
 
 jobs:
   codegen-placeholder:
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
     
     steps:
     - name: Checkout code

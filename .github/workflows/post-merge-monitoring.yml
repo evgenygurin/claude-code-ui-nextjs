@@ -34,7 +34,7 @@ jobs:
   post-merge-health-check:
     name: Post-Merge Health Assessment
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && (github.base_ref == 'main' || github.base_ref == 'master'))
     
     outputs:
       health-status: ${{ steps.health-assessment.outputs.status }}
@@ -115,7 +115,8 @@ jobs:
           # Check coverage if available
           if [ -f "coverage/lcov-report/index.html" ]; then
             COVERAGE=$(grep -oP 'Functions.*?(\d+\.\d+)%' coverage/lcov-report/index.html | grep -oP '\d+\.\d+' | head -1 || echo "0")
-            if (( $(echo "$COVERAGE >= 80" | bc -l) )); then
+            # Use shell arithmetic instead of bc for better compatibility
+            if [ "$(printf "%.0f" "$COVERAGE")" -ge 80 ]; then
               echo "- ✅ Coverage: ${COVERAGE}% (Good)" >> health-report.md
             else
               echo "- ⚠️ Coverage: ${COVERAGE}% (Low)" >> health-report.md
