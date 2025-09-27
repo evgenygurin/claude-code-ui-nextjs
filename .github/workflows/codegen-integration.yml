@@ -42,8 +42,8 @@ jobs:
           echo "Error Details: ${{ github.event.inputs.error_details }}"
           echo "This workflow can be used to manually trigger CodeGen analysis"
 
-          ERROR_TYPE="${{ github.event.inputs.error_type || 'ci_failure' }}"
-          ERROR_DETAILS="${{ github.event.inputs.error_details || 'CI/CD pipeline failure detected' }}"
+          ERROR_TYPE="${{ github.event.inputs.error_type }}"
+          ERROR_DETAILS="${{ github.event.inputs.error_details }}"
 
           # Run the error handler script (this won't fail the build)
           node scripts/codegen-error-handler.js "$ERROR_TYPE" "$ERROR_DETAILS" || echo "Handler completed"
@@ -53,8 +53,8 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const errorType = '${{ github.event.inputs.error_type || "ci_failure" }}';
-            const errorDetails = '${{ github.event.inputs.error_details || "CI/CD pipeline failure" }}';
+            const errorType = '${{ github.event.inputs.error_type }}';
+            const errorDetails = '${{ github.event.inputs.error_details }}';
             const runUrl = '${{ github.event.workflow_run.html_url || github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
 
             const issueBody = [
