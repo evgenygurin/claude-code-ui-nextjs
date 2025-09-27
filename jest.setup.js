@@ -118,37 +118,80 @@ jest.mock('framer-motion', () => ({
 
 // Mock lucide-react icons
 jest.mock('lucide-react', () => {
-  const IconComponent = ({ className, ...props }) =>
-    React.createElement('svg', {
-      className,
-      ...props,
-      'data-testid': 'mock-icon',
-    });
+  const React = require('react')
+  
+  // Create a mock component factory
+  const createMockIcon = (iconName) => {
+    const MockIcon = React.forwardRef((props, ref) => {
+      return React.createElement('svg', {
+        ...props,
+        ref,
+        'data-testid': `${iconName}-icon`,
+        className: `lucide lucide-${iconName.toLowerCase()} ${props.className || ''}`.trim(),
+        'aria-label': iconName
+      })
+    })
+    MockIcon.displayName = `${iconName}Icon`
+    return MockIcon
+  }
 
   return {
-    ChevronLeft: IconComponent,
-    ChevronRight: IconComponent,
-    Home: IconComponent,
-    FolderOpen: IconComponent,
-    FileText: IconComponent,
-    MessageSquare: IconComponent,
-    Terminal: IconComponent,
-    GitBranch: IconComponent,
-    Search: IconComponent,
-    Plus: IconComponent,
-    Settings: IconComponent,
-    Send: IconComponent,
-    Square: IconComponent,
-    Mic: IconComponent,
-    MicOff: IconComponent,
-    Paperclip: IconComponent,
-    X: IconComponent,
-    Copy: IconComponent,
-    Download: IconComponent,
-    ExternalLink: IconComponent,
-    Bot: IconComponent,
-    User: IconComponent,
-  };
+    // Navigation icons
+    MessageSquare: createMockIcon('MessageSquare'),
+    FolderTree: createMockIcon('FolderTree'), 
+    Terminal: createMockIcon('Terminal'),
+    Briefcase: createMockIcon('Briefcase'),
+    Settings: createMockIcon('Settings'),
+    
+    // UI control icons
+    ChevronLeft: createMockIcon('ChevronLeft'),
+    ChevronRight: createMockIcon('ChevronRight'),
+    ChevronDown: createMockIcon('ChevronDown'),
+    Menu: createMockIcon('Menu'),
+    X: createMockIcon('X'),
+    Plus: createMockIcon('Plus'),
+    
+    // Chat and media icons
+    Send: createMockIcon('Send'),
+    Square: createMockIcon('Square'),
+    Bot: createMockIcon('Bot'),
+    Mic: createMockIcon('Mic'),
+    Paperclip: createMockIcon('Paperclip'),
+    Image: createMockIcon('Image'),
+    
+    // File and folder icons
+    File: createMockIcon('File'),
+    Folder: createMockIcon('Folder'),
+    FolderOpen: createMockIcon('FolderOpen'),
+    FileText: createMockIcon('FileText'),
+    
+    // Status and utility icons
+    Check: createMockIcon('Check'),
+    Copy: createMockIcon('Copy'),
+    Download: createMockIcon('Download'),
+    Upload: createMockIcon('Upload'),
+    Trash: createMockIcon('Trash'),
+    Edit: createMockIcon('Edit'),
+    Search: createMockIcon('Search'),
+    
+    // System icons
+    Home: createMockIcon('Home'),
+    User: createMockIcon('User'),
+    Bell: createMockIcon('Bell'),
+    HelpCircle: createMockIcon('HelpCircle'),
+    
+    // Development icons
+    Code: createMockIcon('Code'),
+    GitBranch: createMockIcon('GitBranch'),
+    Package: createMockIcon('Package'),
+    Database: createMockIcon('Database'),
+    
+    // Layout icons
+    Sidebar: createMockIcon('Sidebar'),
+    Layout: createMockIcon('Layout'),
+    Maximize: createMockIcon('Maximize'),
+    Minimize: createMockIcon('Minimize'),
+  }
 });
 
 // Suppress console warnings in tests

@@ -29,9 +29,7 @@ describe('Sidebar', () => {
   it('should call onToggle when toggle button is clicked', () => {
     render(<Sidebar {...defaultProps} />);
 
-    const toggleButton = screen.getByRole('button', {
-      name: /collapse sidebar/i,
-    });
+    const toggleButton = screen.getByRole('button', { name: 'Collapse sidebar' });
     fireEvent.click(toggleButton);
 
     expect(defaultProps.onToggle).toHaveBeenCalledTimes(1);
