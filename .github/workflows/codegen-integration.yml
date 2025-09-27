@@ -11,13 +11,23 @@ on:
         description: 'Error details'
         required: false
         default: 'Manual CodeGen trigger'
+  # Disabled during PR checks - only manual trigger
+  # pull_request: false  
+  # push: false
 
 jobs:
   codegen-placeholder:
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.error_type != '' && github.actor != 'github-actions[bot]'
     
     steps:
+    - name: Debug workflow trigger
+      run: |
+        echo "Event name: ${{ github.event_name }}"
+        echo "Event action: ${{ github.event.action }}"
+        echo "Ref: ${{ github.ref }}"
+        echo "Should only run on workflow_dispatch with proper inputs"
+        
     - name: Checkout code
       uses: actions/checkout@v4
 
