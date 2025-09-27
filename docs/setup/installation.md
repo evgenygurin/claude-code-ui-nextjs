@@ -45,6 +45,7 @@ npm install
 ```
 
 This will install all required dependencies including:
+
 - Next.js 15
 - React 19
 - TypeScript
@@ -145,6 +146,7 @@ npm run dev
 ```
 
 The application will be available at:
+
 - **Frontend**: http://localhost:3000
 - **API**: http://localhost:3000/api
 
@@ -162,6 +164,7 @@ The application will be available at:
 #### Configure Claude Code
 
 1. Run Claude Code in a project directory:
+
    ```bash
    cd /path/to/your/project
    claude

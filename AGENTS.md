@@ -69,17 +69,17 @@ This is a Next.js 15 application with React 19 that provides a modern web interf
 
 ```typescript
 // 1. React and Next.js imports
-import React from 'react'
-import { NextRequest, NextResponse } from 'next/server'
+import React from 'react';
+import { NextRequest, NextResponse } from 'next/server';
 
 // 2. Third-party library imports
-import { z } from 'zod'
-import * as Sentry from '@sentry/nextjs'
+import { z } from 'zod';
+import * as Sentry from '@sentry/nextjs';
 
 // 3. Internal imports using path aliases
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
-import { UserSession } from '@/types/auth'
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { UserSession } from '@/types/auth';
 ```
 
 ## 🎨 UI Development Rules
@@ -132,20 +132,21 @@ import { UserSession } from '@/types/auth'
 
   ```typescript
   interface ChatStore {
-    messages: Message[]
-    isLoading: boolean
-    addMessage: (message: Message) => void
-    clearMessages: () => void
+    messages: Message[];
+    isLoading: boolean;
+    addMessage: (message: Message) => void;
+    clearMessages: () => void;
   }
 
-  export const useChatStore = create<ChatStore>((set) => ({
+  export const useChatStore = create<ChatStore>(set => ({
     messages: [],
     isLoading: false,
-    addMessage: (message) => set((state) => ({
-      messages: [...state.messages, message]
-    })),
+    addMessage: message =>
+      set(state => ({
+        messages: [...state.messages, message],
+      })),
     clearMessages: () => set({ messages: [] }),
-  }))
+  }));
   ```
 
 ### React State Patterns
@@ -165,27 +166,24 @@ import { UserSession } from '@/types/auth'
 - **PATTERN**:
 
   ```typescript
-  import { NextRequest, NextResponse } from 'next/server'
-  import { z } from 'zod'
-  import * as Sentry from '@sentry/nextjs'
+  import { NextRequest, NextResponse } from 'next/server';
+  import { z } from 'zod';
+  import * as Sentry from '@sentry/nextjs';
 
   const RequestSchema = z.object({
     message: z.string().min(1).max(1000),
-  })
+  });
 
   export async function POST(request: NextRequest) {
     try {
-      const body = await request.json()
-      const { message } = RequestSchema.parse(body)
+      const body = await request.json();
+      const { message } = RequestSchema.parse(body);
 
       // Process request
-      return NextResponse.json({ success: true })
+      return NextResponse.json({ success: true });
     } catch (error) {
-      Sentry.captureException(error)
-      return NextResponse.json(
-        { error: 'Invalid request' },
-        { status: 400 }
-      )
+      Sentry.captureException(error);
+      return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
   }
   ```

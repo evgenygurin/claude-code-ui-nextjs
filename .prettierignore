@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Build outputs
+.next/
+out/
+dist/
+build/
+
+# Misc
+*.tsbuildinfo
+next-env.d.ts
+
+# Environment variables
+.env
+.env.local
+.env.production.local
+.env.test.local
+
+# Package lock files
+package-lock.json
+yarn.lock
+
+# GitHub workflows (YAML files that may have complex templating)
+.github/workflows/codegen-integration.yml
+.github/workflows/post-merge-monitoring.yml
+
+# Health monitoring data
+.health-monitoring/

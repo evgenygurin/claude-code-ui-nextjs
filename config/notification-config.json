@@ -7,8 +7,18 @@
         "priority_levels": ["critical", "high", "medium"],
         "labels": {
           "critical": ["critical", "post-merge", "health-monitoring", "urgent"],
-          "high": ["high", "post-merge", "health-monitoring", "attention-needed"],
-          "medium": ["medium", "post-merge", "health-monitoring", "improvement"],
+          "high": [
+            "high",
+            "post-merge",
+            "health-monitoring",
+            "attention-needed"
+          ],
+          "medium": [
+            "medium",
+            "post-merge",
+            "health-monitoring",
+            "improvement"
+          ],
           "low": ["low", "post-merge", "health-monitoring", "routine"]
         },
         "templates": {
@@ -103,10 +113,7 @@
       },
       {
         "name": "informational",
-        "trigger_conditions": [
-          "improvement",
-          "health_score >= 90"
-        ],
+        "trigger_conditions": ["improvement", "health_score >= 90"],
         "actions": [
           "create_github_comment",
           "update_baselines",
