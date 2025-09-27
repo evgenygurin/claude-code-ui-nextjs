@@ -74,7 +74,11 @@ jobs:
         echo "Repository: ${{ github.repository }}"
         echo "Branch: ${{ github.ref_name }}"
         echo "Commit: ${{ github.sha }}"
-        echo "Check type: ${{ github.event.inputs.check_type || 'comprehensive' }}"
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          echo "Check type: ${{ github.event.inputs.check_type || 'comprehensive' }}"
+        else
+          echo "Check type: comprehensive (automated)"
+        fi
         
         # Create monitoring directories
         mkdir -p .health-monitoring/{reports,baselines,trends}
@@ -235,7 +239,12 @@ jobs:
         fi
         
         echo "### 🤖 Automated Actions" >> health-report.md
-        if [ "$REQUIRES_INTERVENTION" = true ] || [ "${{ github.event.inputs.force_codegen_trigger }}" = true ]; then
+        FORCE_TRIGGER="false"
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          FORCE_TRIGGER="${{ github.event.inputs.force_codegen_trigger || 'false' }}"
+        fi
+        
+        if [ "$REQUIRES_INTERVENTION" = true ] || [ "$FORCE_TRIGGER" = true ]; then
           echo "- CodeGen intervention will be triggered" >> health-report.md
         else
           echo "- No immediate action required" >> health-report.md
@@ -278,7 +287,7 @@ jobs:
     name: CodeGen Intervention
     runs-on: ubuntu-latest
     needs: [post-merge-health-check]
-    if: needs.post-merge-health-check.outputs.requires-intervention == 'true' || github.event.inputs.force_codegen_trigger == 'true'
+    if: needs.post-merge-health-check.outputs.requires-intervention == 'true' || (github.event_name == 'workflow_dispatch' && github.event.inputs.force_codegen_trigger == 'true')
     
     steps:
     - name: Checkout code
