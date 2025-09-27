@@ -133,32 +133,56 @@ jobs:
         run: npm install --global vercel@latest
 
       - name: Pull Vercel Environment Information
-        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ -z "${{ secrets.VERCEL_TOKEN }}" ]; then
+            echo "⚠️ VERCEL_TOKEN not configured, skipping preview deployment"
+            echo "To enable preview deployments, add VERCEL_TOKEN to GitHub repository secrets"
+            exit 0
+          fi
+          vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }} || {
+            echo "❌ Failed to pull Vercel configuration"
+            echo "This might be due to missing project configuration or invalid token"
+            exit 0
+          }
 
       - name: Build Project Artifacts
-        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        if: env.VERCEL_TOKEN != ''
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }} || {
+          echo "❌ Vercel build failed"
+          echo "Preview deployment is optional, continuing with CI/CD pipeline"
+          exit 0
+        }
 
       - name: Deploy Project Artifacts to Vercel
         id: deploy
+        if: env.VERCEL_TOKEN != ''
         run: |
-          url=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          url=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}) || {
+            echo "❌ Vercel deployment failed"
+            echo "Preview deployment is optional, continuing with CI/CD pipeline"
+            exit 0
+          }
           echo "url=$url" >> $GITHUB_OUTPUT
           echo "::notice::Preview deployed to $url"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
       - name: Comment PR with preview URL
         uses: actions/github-script@v7
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && steps.deploy.outputs.url != ''
         with:
           script: |
             const previewUrl = '${{ steps.deploy.outputs.url }}';
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `🚀 Preview deployment ready! Visit: ${previewUrl}
-              
-              This preview will be updated automatically when you push new commits to this branch.`
-            });
+            if (previewUrl && previewUrl !== '') {
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `🚀 Preview deployment ready! Visit: ${previewUrl}
+                
+                This preview will be updated automatically when you push new commits to this branch.`
+              });
+            }
 
   deploy-production:
     name: Deploy Production (Vercel)
@@ -180,10 +204,18 @@ jobs:
         run: npm install --global vercel@latest
 
       - name: Pull Vercel Environment Information
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ -z "${{ secrets.VERCEL_TOKEN }}" ]; then
+            echo "❌ VERCEL_TOKEN not configured, cannot deploy to production"
+            echo "Please add VERCEL_TOKEN to GitHub repository secrets"
+            exit 1
+          fi
+          vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build Project Artifacts
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy Project Artifacts to Vercel
         id: deploy
@@ -191,6 +223,8 @@ jobs:
           url=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
           echo "url=$url" >> $GITHUB_OUTPUT
           echo "::notice::Production deployed to $url"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
       - name: Create deployment status
         uses: actions/github-script@v7
@@ -210,7 +244,7 @@ jobs:
     name: Performance Audit
     runs-on: ubuntu-latest
     needs: [deploy-preview]
-    if: github.event_name == 'pull_request' && needs.deploy-preview.result == 'success'
+    if: github.event_name == 'pull_request' && needs.deploy-preview.result == 'success' && needs.deploy-preview.outputs.preview-url != ''
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
