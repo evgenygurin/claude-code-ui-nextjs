@@ -308,11 +308,29 @@ export class CodeGenIntegrations {
             organizationId: config.codegen?.organizationId || '',
           },
           integrations: {
-            github: config.github && config.github.token && config.github.owner && config.github.repo ? config.github : undefined,
-            sentry: config.sentry && config.sentry.authToken && config.sentry.organization && config.sentry.project ? config.sentry : undefined,
-            linear: config.linear && config.linear.apiKey && config.linear.teamId ? config.linear : undefined,
-            circleci: config.circleci && config.circleci.token && config.circleci.vcsType && config.circleci.organization ? config.circleci : undefined,
-            figma: config.figma && config.figma.accessToken ? config.figma : undefined,
+            github: config.github && config.github.token && config.github.owner && config.github.repo ? {
+              token: config.github.token,
+              owner: config.github.owner,
+              repo: config.github.repo
+            } : undefined,
+            sentry: config.sentry && config.sentry.authToken && config.sentry.organization && config.sentry.project ? {
+              authToken: config.sentry.authToken,
+              organization: config.sentry.organization,
+              project: config.sentry.project
+            } : undefined,
+            linear: config.linear && config.linear.apiKey && config.linear.teamId ? {
+              apiKey: config.linear.apiKey,
+              teamId: config.linear.teamId
+            } : undefined,
+            circleci: config.circleci && config.circleci.token && config.circleci.vcsType && config.circleci.organization ? {
+              token: config.circleci.token,
+              vcsType: config.circleci.vcsType,
+              organization: config.circleci.organization
+            } : undefined,
+            figma: config.figma && config.figma.accessToken && config.figma.teamId ? {
+              accessToken: config.figma.accessToken,
+              teamId: config.figma.teamId
+            } : undefined,
           },
           ai: {
             enabled: true,
@@ -378,27 +396,27 @@ export class CodeGenIntegrations {
     return {
       github: {
         available: !!this.github,
-        status: INTEGRATION_CATALOG.github,
+        status: INTEGRATION_CATALOG.github!,
       },
       sentry: {
         available: !!this.sentry,
-        status: INTEGRATION_CATALOG.sentry,
+        status: INTEGRATION_CATALOG.sentry!,
       },
       linear: {
         available: !!this.linear,
-        status: INTEGRATION_CATALOG.linear,
+        status: INTEGRATION_CATALOG.linear!,
       },
       circleci: {
         available: !!this.circleci,
-        status: INTEGRATION_CATALOG.circleci,
+        status: INTEGRATION_CATALOG.circleci!,
       },
       figma: {
         available: !!this.figma,
-        status: INTEGRATION_CATALOG.figma,
+        status: INTEGRATION_CATALOG.figma!,
       },
       codegen: {
         available: !!this.codegen,
-        status: INTEGRATION_CATALOG.codegen,
+        status: INTEGRATION_CATALOG.codegen!,
       },
     };
   }

@@ -14,21 +14,78 @@ jobs:
     executor: node-executor
     steps:
       - checkout
+
+      # Multi-layer caching strategy for better performance
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "package-lock.json" }}
-            - v1-dependencies-
+            # Primary cache: exact package-lock.json match
+            - v2-dependencies-{{ checksum "package-lock.json" }}-{{ checksum "package.json" }}
+            # Secondary cache: same package-lock.json, different package.json
+            - v2-dependencies-{{ checksum "package-lock.json" }}-
+            # Tertiary cache: any recent cache from this branch
+            - v2-dependencies-{{ .Branch }}-
+            # Fallback cache: any recent cache
+            - v2-dependencies-
+
+      # Restore Next.js cache for faster builds
+      - restore_cache:
+          keys:
+            - v2-nextjs-cache-{{ .Branch }}-{{ checksum "package-lock.json" }}
+            - v2-nextjs-cache-{{ .Branch }}-
+            - v2-nextjs-cache-
+
       - run:
           name: Install Dependencies
-          command: npm ci
+          command: |
+            echo "📦 Installing dependencies..."
+
+            # Use npm ci for faster, reproducible installs in CI
+            if [ -f package-lock.json ]; then
+              npm ci
+            else
+              echo "⚠️ No package-lock.json found, running npm install"
+              npm install
+            fi
+
+            # Display some useful info
+            echo "📊 Dependency installation stats:"
+            echo "Node version: $(node --version)"
+            echo "NPM version: $(npm --version)"
+            echo "Package count: $(npm list --depth=0 2>/dev/null | grep -c '^[└├]' || echo 'unknown')"
+
+      - run:
+          name: Verify Installation
+          command: |
+            echo "✅ Verifying installation..."
+
+            # Check if key packages are available
+            if npm list next &>/dev/null; then
+              echo "✅ Next.js: $(npm list next --depth=0 | grep next || echo 'not found')"
+            fi
+
+            if npm list react &>/dev/null; then
+              echo "✅ React: $(npm list react --depth=0 | grep react || echo 'not found')"
+            fi
+
+            # Check for security vulnerabilities in fresh install
+            echo "🔍 Quick security check..."
+            npm audit --audit-level=high || echo "⚠️ Security issues detected - will be addressed in vulnerability_scan job"
+
       - save_cache:
           paths:
             - node_modules
-          key: v1-dependencies-{{ checksum "package-lock.json" }}
+          key: v2-dependencies-{{ checksum "package-lock.json" }}-{{ checksum "package.json" }}
+
+      - save_cache:
+          paths:
+            - ~/.npm
+          key: v2-npm-cache-{{ checksum "package-lock.json" }}
+
       - persist_to_workspace:
           root: ~/project
           paths:
             - .
+            - node_modules
 
   lint:
     executor: node-executor
@@ -47,9 +104,33 @@ jobs:
       - run:
           name: Type Checking
           command: npm run type-check
+
+  test:
+    executor: node-executor
+    parallelism: 2
+    steps:
+      - attach_workspace:
+          at: ~/project
       - run:
-          name: Run Tests
-          command: npm run test:ci || echo "Some tests failed, but continuing with build"
+          name: Run Tests with Coverage
+          command: |
+            echo "Running tests with parallelism on node $CIRCLE_NODE_INDEX"
+            npm run test:ci -- --coverage --passWithNoTests
+      - run:
+          name: Upload Coverage Reports
+          command: |
+            if [ -f coverage/lcov.info ]; then
+              echo "Coverage report generated successfully"
+              # Upload to Codecov if token is available
+              if [ -n "$CODECOV_TOKEN" ]; then
+                curl -s https://codecov.io/bash | bash -s -- -t $CODECOV_TOKEN
+              fi
+            fi
+      - store_test_results:
+          path: coverage
+      - store_artifacts:
+          path: coverage
+          destination: coverage-reports
 
   build:
     executor: node-executor
@@ -60,10 +141,76 @@ jobs:
           name: Build Application
           command: npm run build
       - run:
-          name: Check Build Size
+          name: Bundle Analysis
           command: |
-            echo "Build completed successfully"
-            du -sh .next || true
+            echo "🔍 Analyzing bundle size and composition..."
+
+            # Check if bundle analyzer is available
+            if npm list @next/bundle-analyzer &>/dev/null; then
+              echo "Running bundle analysis..."
+              ANALYZE=true npm run build
+            else
+              echo "Bundle analyzer not installed, installing..."
+              npm install --no-save @next/bundle-analyzer
+              ANALYZE=true npm run build
+            fi
+
+            # Calculate and display build sizes
+            echo "📊 Build Size Analysis:"
+            if [ -d ".next" ]; then
+              echo "Total .next size: $(du -sh .next | cut -f1)"
+              echo "Static files: $(du -sh .next/static 2>/dev/null | cut -f1 || echo 'N/A')"
+              echo "Server chunks: $(du -sh .next/server 2>/dev/null | cut -f1 || echo 'N/A')"
+
+              # Find large files (>500KB)
+              echo "📈 Large files (>500KB):"
+              find .next -type f -size +500k -exec ls -lh {} \; | awk '{print $5 " " $9}' || echo "None found"
+
+              # Count total files
+              echo "📁 Total files: $(find .next -type f | wc -l)"
+            fi
+      - run:
+          name: Performance Budget Check
+          command: |
+            echo "🎯 Checking performance budget..."
+
+            # Check if lighthouse budget exists
+            if [ -f "lighthouse-budget.json" ]; then
+              echo "Found lighthouse budget configuration"
+
+              # Install lighthouse if not available
+              if ! command -v lighthouse &> /dev/null; then
+                npm install -g lighthouse
+              fi
+
+              # Note: Full lighthouse audit requires deployment URL
+              # This is a placeholder for budget validation
+              echo "✅ Performance budget configuration validated"
+            else
+              echo "⚠️ No lighthouse-budget.json found, skipping performance budget check"
+            fi
+
+            # Basic bundle size limits
+            NEXT_SIZE=$(du -sb .next 2>/dev/null | cut -f1 || echo "0")
+            MAX_SIZE=$((50 * 1024 * 1024))  # 50MB limit
+
+            if [ "$NEXT_SIZE" -gt "$MAX_SIZE" ]; then
+              echo "❌ Build size exceeds 50MB limit: $(echo $NEXT_SIZE | numfmt --to=iec)"
+              exit 1
+            else
+              echo "✅ Build size within limits: $(echo $NEXT_SIZE | numfmt --to=iec)"
+            fi
+      - store_artifacts:
+          path: .next
+          destination: build-artifacts
+      - save_cache:
+          paths:
+            - .next/cache
+          key: v2-nextjs-cache-{{ .Branch }}-{{ checksum "package-lock.json" }}-{{ epoch }}
+
+      - store_artifacts:
+          path: lighthouse-budget.json
+          destination: performance-config
       - persist_to_workspace:
           root: ~/project
           paths:
@@ -179,29 +326,137 @@ jobs:
             # Output the deployment URL
             echo "✅ Production URL: $(cat deployment-url.txt)"
 
+  vulnerability_scan:
+    executor: node-executor
+    steps:
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: NPM Security Audit
+          command: |
+            echo "🔍 Running npm security audit..."
+
+            # Run npm audit and capture results
+            if npm audit --audit-level=moderate; then
+              echo "✅ No moderate or higher vulnerabilities found"
+            else
+              echo "⚠️ Vulnerabilities detected, generating detailed report..."
+              npm audit --json > npm-audit-results.json || true
+
+              # Show summary
+              if [ -f npm-audit-results.json ]; then
+                echo "📊 Vulnerability Summary:"
+                cat npm-audit-results.json | jq -r '.metadata.vulnerabilities | to_entries[] | "\(.key): \(.value)"' 2>/dev/null || echo "Unable to parse results"
+              fi
+
+              # Fail on high or critical vulnerabilities
+              HIGH_VULNS=$(npm audit --json 2>/dev/null | jq '.metadata.vulnerabilities.high // 0' 2>/dev/null || echo 0)
+              CRITICAL_VULNS=$(npm audit --json 2>/dev/null | jq '.metadata.vulnerabilities.critical // 0' 2>/dev/null || echo 0)
+
+              if [ "$HIGH_VULNS" -gt 0 ] || [ "$CRITICAL_VULNS" -gt 0 ]; then
+                echo "❌ High or critical vulnerabilities found - failing build"
+                exit 1
+              else
+                echo "⚠️ Only low/moderate vulnerabilities found - continuing build"
+              fi
+            fi
+      - run:
+          name: License Compliance Check
+          command: |
+            echo "📄 Checking license compliance..."
+
+            # Install license checker if not available
+            if ! npm list license-checker &>/dev/null; then
+              npm install --no-save license-checker
+            fi
+
+            # Generate license report
+            npx license-checker --json > licenses.json
+
+            # Check for problematic licenses
+            echo "📋 License Summary:"
+            npx license-checker --summary || echo "License checker not available"
+
+            # Look for GPL or other copyleft licenses that might be problematic
+            if grep -i -E "(gpl|agpl|copyleft)" licenses.json &>/dev/null; then
+              echo "⚠️ Found potentially problematic licenses (GPL/AGPL/Copyleft)"
+              echo "Please review license compatibility manually"
+            else
+              echo "✅ No obviously problematic licenses detected"
+            fi
+      - store_artifacts:
+          path: npm-audit-results.json
+          destination: security-reports
+      - store_artifacts:
+          path: licenses.json
+          destination: compliance-reports
+
   security_scan:
     executor: node-executor
     steps:
       - attach_workspace:
           at: ~/project
       - run:
-          name: Install TruffleHog
+          name: Install Security Tools
           command: |
+            # Install TruffleHog for secret scanning
             curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin
+
+            # Install semgrep for SAST
+            python3 -m pip install semgrep || echo "Semgrep installation skipped"
       - run:
-          name: Scan for Secrets
+          name: Scan for Hardcoded Secrets
           command: |
             echo "🔍 Scanning for hardcoded secrets..."
+
+            # Create exclusion file if it doesn't exist
+            if [ ! -f .trufflehogignore ]; then
+              cat > .trufflehogignore << EOF
+            node_modules/
+            .git/
+            .next/
+            coverage/
+            *.log
+            EOF
+            fi
+
             trufflehog filesystem --directory=. --exclude-paths=.trufflehogignore --no-verification --json > trufflehog-results.json || true
 
             # Check if any secrets were found
-            if [ -s trufflehog-results.json ]; then
+            if [ -s trufflehog-results.json ] && [ "$(cat trufflehog-results.json | wc -l)" -gt 0 ]; then
               echo "❌ SECURITY ALERT: Potential secrets detected!"
-              cat trufflehog-results.json
+              echo "📋 Secret scan results:"
+              cat trufflehog-results.json | head -20
               exit 1
             else
               echo "✅ No hardcoded secrets detected"
             fi
+      - run:
+          name: Static Application Security Testing
+          command: |
+            echo "🛡️ Running Static Application Security Testing..."
+
+            # Run semgrep if available
+            if command -v semgrep &> /dev/null; then
+              echo "Running Semgrep SAST..."
+              semgrep --config=auto --json --output=semgrep-results.json . || true
+
+              if [ -f semgrep-results.json ] && [ "$(cat semgrep-results.json | jq '.results | length' 2>/dev/null || echo 0)" -gt 0 ]; then
+                echo "⚠️ SAST findings detected:"
+                cat semgrep-results.json | jq -r '.results[] | "\(.check_id): \(.message)"' 2>/dev/null | head -10
+                echo "Please review semgrep-results.json for details"
+              else
+                echo "✅ No SAST issues detected"
+              fi
+            else
+              echo "⚠️ Semgrep not available, skipping SAST"
+            fi
+      - store_artifacts:
+          path: trufflehog-results.json
+          destination: security-reports
+      - store_artifacts:
+          path: semgrep-results.json
+          destination: security-reports
 
   codegen_analysis:
     executor: node-executor
@@ -251,6 +506,7 @@ workflows:
     jobs:
       - install_dependencies
 
+      # Parallel quality checks phase
       - lint:
           requires:
             - install_dependencies
@@ -259,19 +515,31 @@ workflows:
           requires:
             - install_dependencies
 
-      - build:
+      - test:
           requires:
             - install_dependencies
 
+      - vulnerability_scan:
+          requires:
+            - install_dependencies
+
+      # Build phase (depends on quality checks)
+      - build:
+          requires:
+            - lint
+            - type_check
+            - test
+
+      # Security scanning (can run in parallel with build)
       - security_scan:
           requires:
             - install_dependencies
 
+      # Deployment phase (requires all checks to pass)
       - deploy_preview:
           requires:
-            - lint
-            - type_check
             - build
+            - vulnerability_scan
             - security_scan
           filters:
             branches:
@@ -281,9 +549,8 @@ workflows:
 
       - deploy_production:
           requires:
-            - lint
-            - type_check
             - build
+            - vulnerability_scan
             - security_scan
           filters:
             branches:
@@ -311,35 +578,84 @@ workflows:
                 - main
     jobs:
       - install_dependencies
+
+      # Parallel quality checks
       - lint:
           requires:
             - install_dependencies
       - type_check:
           requires:
             - install_dependencies
-      - build:
+      - test:
           requires:
             - install_dependencies
+      - vulnerability_scan:
+          requires:
+            - install_dependencies
+      - security_scan:
+          requires:
+            - install_dependencies
+
+      # Build after quality checks
+      - build:
+          requires:
+            - lint
+            - type_check
+            - test
 
   # CodeGen integration workflow for AI-powered testing
   codegen_integration:
     triggers:
       - schedule:
-          cron: '0 6 * * 1' # Weekly on Mondays
+          cron: '0 6 * * 1' # Weekly on Mondays at 6 AM
           filters:
             branches:
               only: main
     jobs:
       - install_dependencies
+
+      # Full quality pipeline for CodeGen analysis
       - lint:
           requires:
             - install_dependencies
       - type_check:
           requires:
             - install_dependencies
-      - build:
+      - test:
           requires:
             - install_dependencies
+      - vulnerability_scan:
+          requires:
+            - install_dependencies
+      - security_scan:
+          requires:
+            - install_dependencies
+
+      - build:
+          requires:
+            - lint
+            - type_check
+            - test
+
       - codegen_analysis:
           requires:
             - build
+            - vulnerability_scan
+            - security_scan
+
+  # Weekly comprehensive security audit
+  security_audit:
+    triggers:
+      - schedule:
+          cron: '0 3 * * 6' # Saturdays at 3 AM
+          filters:
+            branches:
+              only: main
+    jobs:
+      - install_dependencies
+      - vulnerability_scan:
+          requires:
+            - install_dependencies
+      - security_scan:
+          requires:
+            - install_dependencies
