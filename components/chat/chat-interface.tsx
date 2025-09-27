@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useState, useRef, useEffect } from 'react';
 import { Send, Square, Copy, User, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { cn, formatDate } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 
 interface Message {
   id: string;

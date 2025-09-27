@@ -277,7 +277,7 @@ class HealthChangeDetector {
         // Extract basic info from filename (in a real system, we'd parse the report)
         const match = file.match(/(\d{8})-(\d{6})-health-report\.md/);
         if (match) {
-          const [, date, time] = match;
+          const [, _date, _time] = match;
           // Simulated health data extraction
           history.push({
             timestamp: mtime.toISOString(),
@@ -294,7 +294,7 @@ class HealthChangeDetector {
     return history;
   }
 
-  async analyzeChanges(current, baseline, history) {
+  async analyzeChanges(current, baseline, _history) {
     const changes = {
       scoreChange: current.overallScore - baseline.score,
       statusChange: current.status !== baseline.status,
@@ -617,7 +617,7 @@ if (require.main === module) {
 
   async function main() {
     switch (command) {
-      case 'detect':
+      case 'detect': {
         const analysis = await detector.detectHealthChanges();
         console.log('\n📊 Health Change Detection Summary:');
         console.log(`Current Score: ${analysis.current.overallScore}/100`);
@@ -628,20 +628,22 @@ if (require.main === module) {
           console.log(`Issues: ${analysis.current.issues.join(', ')}`);
         }
         break;
+      }
         
-      case 'history':
+      case 'history': {
         const days = parseInt(process.argv[3]) || 7;
-        const history = await detector.getChangeHistory(days);
+        const _history = await detector.getChangeHistory(days);
         console.log(`\n📋 Health Change History (Last ${days} days):`);
-        console.log(`Found ${history.length} significant changes`);
+        console.log(`Found ${_history.length} significant changes`);
         
-        history.forEach((change, index) => {
+        _history.forEach((change, index) => {
           console.log(`\n${index + 1}. ${change.type} (${change.priority} priority)`);
           console.log(`   Time: ${change.timestamp}`);
           console.log(`   Description: ${change.description}`);
           console.log(`   Action: ${change.recommendedAction}`);
         });
         break;
+      }
         
       case 'help':
       default:

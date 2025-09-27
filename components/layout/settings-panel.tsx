@@ -16,9 +16,7 @@ import {
   Upload,
   RotateCcw,
   Save,
-  User,
   Key,
-  Database,
   Wifi,
   Volume2,
 } from 'lucide-react';

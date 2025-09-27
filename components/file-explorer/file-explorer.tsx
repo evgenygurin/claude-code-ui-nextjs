@@ -13,7 +13,6 @@ import {
   Code,
   Settings,
   ChevronRight,
-  ChevronDown,
   Plus,
   Search,
   MoreHorizontal,

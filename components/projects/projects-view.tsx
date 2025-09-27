@@ -4,20 +4,14 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Folder,
-  FolderOpen,
   Plus,
   Search,
   MoreHorizontal,
-  Calendar,
   Clock,
   Star,
   GitBranch,
   Code,
-  Trash2,
-  Edit,
   ExternalLink,
-  Settings,
-  Archive,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn, formatDate } from '@/lib/utils';
@@ -91,7 +85,7 @@ export default function ProjectsView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'starred' | 'active' | 'archived'>('all');
   const [sortBy, setSortBy] = useState<'name' | 'lastModified' | 'language'>('lastModified');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [_viewMode, _setViewMode] = useState<'grid' | 'list'>('grid');
 
   const getLanguageColor = (language: string) => {
     const colors: Record<string, string> = {

@@ -8,7 +8,6 @@
 
 const fs = require('fs');
 const path = require('path');
-const { exec } = require('child_process');
 
 class NotificationManager {
   constructor() {
@@ -347,7 +346,7 @@ class NotificationManager {
     return labelsConfig?.[priority] || ['post-merge', 'health-monitoring', priority];
   }
 
-  async createGitHubComment(alert) {
+  async createGitHubComment(_alert) {
     console.log('💬 Creating GitHub comment...');
     
     // In a real implementation, would add comment to existing issue or PR
@@ -508,7 +507,7 @@ class NotificationManager {
     }
   }
 
-  async sendEmailNotification(alert) {
+  async sendEmailNotification(_alert) {
     console.log('📧 Sending email notification...');
     
     // Email functionality would be implemented here
@@ -518,7 +517,7 @@ class NotificationManager {
     };
   }
 
-  async sendSlackNotification(alert) {
+  async sendSlackNotification(_alert) {
     console.log('💬 Sending Slack notification...');
     
     // Slack integration would be implemented here
@@ -528,7 +527,7 @@ class NotificationManager {
     };
   }
 
-  async scheduleFollowUpActions(alert, escalationLevel) {
+  async scheduleFollowUpActions(alert, _escalationLevel) {
     const followUpConfig = this.config.follow_up_schedule?.[`${alert.health_data.status}_health`] ||
                           this.config.follow_up_schedule?.critical_issues ||
                           [];
@@ -608,12 +607,13 @@ if (require.main === module) {
 
   async function main() {
     switch (command) {
-      case 'process-alert':
+      case 'process-alert': {
         const healthData = JSON.parse(process.argv[3] || '{}');
         await manager.processHealthAlert(healthData);
         break;
+      }
         
-      case 'active-alerts':
+      case 'active-alerts': {
         const alerts = await manager.getActiveAlerts();
         console.log(`\n📊 Active Alerts: ${alerts.length}`);
         alerts.forEach((alert, index) => {
@@ -624,8 +624,9 @@ if (require.main === module) {
           console.log(`   Actions: ${alert.actions_taken.length} completed`);
         });
         break;
+      }
         
-      case 'resolve-alert':
+      case 'resolve-alert': {
         const alertId = process.argv[3];
         const resolution = process.argv[4] || 'Manually resolved';
         if (!alertId) {
@@ -634,6 +635,7 @@ if (require.main === module) {
         }
         await manager.resolveAlert(alertId, resolution);
         break;
+      }
         
       case 'help':
       default:

@@ -368,6 +368,7 @@ This is an automated follow-up from the CI/CD failure handling system.
   async createHealthMonitoringSchedule(healthTask) {
     console.log('🔧 Creating health monitoring execution scripts...');
     
+    /* eslint-disable no-useless-escape */
     const scriptContent = `#!/bin/bash
 # Health Monitoring Execution Script
 # Generated at: ${new Date().toISOString()}
@@ -476,6 +477,7 @@ echo "✅ Health monitoring execution completed"
 
     const scriptPath = path.join(this.tasksDir, `health-monitor-${healthTask.id}.sh`);
     fs.writeFileSync(scriptPath, scriptContent);
+    /* eslint-enable no-useless-escape */
     
     // Make script executable
     exec(`chmod +x "${scriptPath}"`, (error) => {
@@ -610,7 +612,7 @@ if (require.main === module) {
         await scheduler.scheduleDelayedTask();
         break;
       
-      case 'schedule-health-monitoring':
+      case 'schedule-health-monitoring': {
         const healthOptions = {
           status: options.status || 'unknown',
           score: parseInt(options.score) || 0,
@@ -619,6 +621,7 @@ if (require.main === module) {
         };
         await scheduler.scheduleHealthMonitoring(healthOptions);
         break;
+      }
       
       case 'check':
         await scheduler.checkPendingTasks();

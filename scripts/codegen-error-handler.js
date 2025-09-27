@@ -5,7 +5,6 @@
  * Automatically triggers CodeGen analysis when CI/CD failures occur
  */
 
-const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
@@ -81,7 +80,7 @@ class CodeGenErrorHandler {
   readFileIfExists(filePath) {
     try {
       return fs.readFileSync(filePath, 'utf8');
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -241,7 +240,7 @@ Please treat this as a HIGH PRIORITY post-merge incident requiring immediate att
     return 'STANDARD - Regular Monitoring';
   }
 
-  async createGitHubComment(prompt, errorReport) {
+  async createGitHubComment(prompt, _errorReport) {
     // This would create a GitHub issue or PR comment
     // triggering CodeGen via GitHub integration
     console.log('💬 GitHub comment would be created here');

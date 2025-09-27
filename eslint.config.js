@@ -1,5 +1,8 @@
 const js = require('@eslint/js');
 const globals = require('globals');
+const { FlatCompat } = require('@eslint/eslintrc');
+
+const compat = new FlatCompat();
 
 /** @type {import('eslint').Linter.Config[]} */
 module.exports = [
@@ -21,6 +24,9 @@ module.exports = [
       '**/__mocks__/**',
     ]
   },
+  
+  // Next.js config
+  ...compat.extends('next/core-web-vitals'),
   
   // JavaScript files
   {
@@ -47,7 +53,7 @@ module.exports = [
         args: 'after-used',
       }],
       'prefer-const': 'error',
-      'no-console': 'warn',
+      'no-console': 'off', // Allow console statements in development
     },
   },
   
@@ -86,7 +92,7 @@ module.exports = [
         args: 'after-used',
       }],
       'prefer-const': 'error',
-      'no-console': 'warn',
+      'no-console': 'off', // Allow console statements in development
       '@typescript-eslint/no-explicit-any': 'warn',
       'no-case-declarations': 'off',
     },

@@ -4,9 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Terminal as TerminalIcon,
-  Play,
-  Square,
-  RotateCcw,
   Copy,
   Download,
   Settings,

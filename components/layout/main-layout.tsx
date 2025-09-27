@@ -5,7 +5,6 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Sidebar from './sidebar';
 import ChatInterface from '@/components/chat/chat-interface';
-import { cn } from '@/lib/utils';
 
 type ViewType = 
   | 'home' 
