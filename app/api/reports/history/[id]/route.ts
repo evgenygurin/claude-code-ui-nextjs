@@ -109,11 +109,12 @@ export async function POST(
     }
 
     // Set appropriate content type
-    const contentType = {
+    const contentTypeMap: Record<string, string> = {
       json: 'application/json',
       html: 'text/html',
       markdown: 'text/markdown',
-    }[report.format] || 'text/plain';
+    };
+    const contentType = contentTypeMap[report.format] || 'text/plain';
 
     return new NextResponse(report.content, {
       headers: {

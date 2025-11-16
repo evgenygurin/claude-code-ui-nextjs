@@ -213,22 +213,29 @@ jobs:
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
-      - name: Pull Vercel Environment Information
+      - name: Check Vercel Token
+        id: check-token
         run: |
           if [ -z "${{ secrets.VERCEL_TOKEN }}" ]; then
-            echo "❌ VERCEL_TOKEN not configured, cannot deploy to production"
-            echo "Please add VERCEL_TOKEN to GitHub repository secrets"
-            exit 1
+            echo "token_available=false" >> $GITHUB_OUTPUT
+            echo "::warning::VERCEL_TOKEN not configured, skipping production deployment"
+          else
+            echo "token_available=true" >> $GITHUB_OUTPUT
           fi
-          vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Pull Vercel Environment Information
+        if: steps.check-token.outputs.token_available == 'true'
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build Project Artifacts
+        if: steps.check-token.outputs.token_available == 'true'
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy Project Artifacts to Vercel
         id: deploy
+        if: steps.check-token.outputs.token_available == 'true'
         run: |
           url=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
           echo "url=$url" >> $GITHUB_OUTPUT
@@ -237,18 +244,27 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
       - name: Create deployment status
+        if: steps.check-token.outputs.token_available == 'true' && steps.deploy.outputs.url != ''
         uses: actions/github-script@v7
         with:
           script: |
             const deploymentUrl = '${{ steps.deploy.outputs.url }}';
-            github.rest.repos.createDeploymentStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              deployment_id: context.payload.deployment?.id,
-              state: 'success',
-              environment_url: deploymentUrl,
-              description: 'Deployment completed successfully'
-            });
+            if (context.payload.deployment?.id) {
+              github.rest.repos.createDeploymentStatus({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                deployment_id: context.payload.deployment.id,
+                state: 'success',
+                environment_url: deploymentUrl,
+                description: 'Deployment completed successfully'
+              });
+            }
+
+      - name: Skip deployment notice
+        if: steps.check-token.outputs.token_available == 'false'
+        run: |
+          echo "::notice::Production deployment skipped - VERCEL_TOKEN not configured"
+          echo "To enable production deployments, add VERCEL_TOKEN to GitHub repository secrets"
 
   performance-audit:
     name: Performance Audit

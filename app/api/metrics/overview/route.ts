@@ -58,7 +58,7 @@ export async function GET() {
         ]);
 
         // Calculate metrics
-        const errorRate24h = sentryStats?.total || 0;
+        const errorRate24h = sentryStats?.totalEvents || 0;
         const cicdStatus = cicdHealth?.pipelineStatus || 'passing';
 
         // Calculate system health (0-100)
@@ -76,8 +76,8 @@ export async function GET() {
           : 0;
 
         // Determine error rate trend
-        const errorRateTrend = sentryStats && sentryStats.total > 0
-          ? (sentryStats.total > (sentryStats.total * 0.9) ? 'increasing' : 'decreasing')
+        const errorRateTrend = sentryStats && sentryStats.totalEvents > 0
+          ? (sentryStats.totalEvents > (sentryStats.totalEvents * 0.9) ? 'increasing' : 'decreasing')
           : 'stable';
 
         return {
