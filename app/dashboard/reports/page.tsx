@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ReportGeneratorForm } from '@/components/reporting/report-generator-form';
 import { ScheduledReportsManager } from '@/components/reporting/scheduled-reports-manager';
-import { FileText, Calendar } from 'lucide-react';
+import { ReportHistory } from '@/components/reporting/report-history';
+import { FileText, Calendar, History } from 'lucide-react';
 
 /**
  * Reports Page
@@ -27,7 +28,7 @@ export default function ReportsPage() {
 
       {/* Tabbed Interface */}
       <Tabs defaultValue="generate" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="generate" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
             Generate Report
@@ -35,6 +36,10 @@ export default function ReportsPage() {
           <TabsTrigger value="scheduled" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
             Scheduled Reports
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex items-center gap-2">
+            <History className="h-4 w-4" />
+            Report History
           </TabsTrigger>
         </TabsList>
 
@@ -46,6 +51,11 @@ export default function ReportsPage() {
         {/* Scheduled Reports Tab */}
         <TabsContent value="scheduled">
           <ScheduledReportsManager />
+        </TabsContent>
+
+        {/* Report History Tab */}
+        <TabsContent value="history">
+          <ReportHistory />
         </TabsContent>
       </Tabs>
     </div>
