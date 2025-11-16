@@ -15,6 +15,10 @@ Claude Code UI is a comprehensive web application that provides a beautiful, res
 - **Integrated Terminal** - Direct CLI access through web browser
 - **File Management** - Browse, edit, and manage project files
 - **Git Integration** - Full Git workflow support
+- **Production Monitoring Dashboard** - Real-time error tracking, CI/CD monitoring, and system health
+- **Intelligent Caching** - Redis-backed caching with automatic fallback
+- **Performance Monitoring** - Comprehensive API and database performance tracking
+- **Automated Reporting** - Scheduled reports with email delivery
 - **Mobile Responsive** - Works perfectly on all devices
 - **High Performance** - Optimized for speed and scalability
 
@@ -96,13 +100,18 @@ The application follows a modern, scalable architecture:
 - **WebSockets** - Real-time communication
 - **NextAuth.js** - Authentication solution
 - **Prisma** - Database ORM
+- **Redis Caching** - High-performance distributed caching
+- **SSE (Server-Sent Events)** - Real-time notifications
+- **Performance Monitoring** - Response time tracking and analytics
 
 #### Infrastructure
 
 - **Vercel** - Hosting and deployment
 - **PostgreSQL** - Primary database
-- **Vercel KV** - Redis-compatible caching
+- **Redis** - Caching and session storage
 - **Vercel Blob** - File storage
+- **Sentry** - Error tracking and monitoring
+- **GitHub Actions** - CI/CD pipeline integration
 
 ## 🔑 Environment Variables
 
@@ -138,6 +147,8 @@ Comprehensive documentation is available in the `/docs` directory:
 
 - [Installation Guide](./docs/setup/installation.md) - Step-by-step setup
 - [Architecture Overview](./docs/README.md) - System design and structure
+- [Integration Guide](./INTEGRATION_GUIDE.md) - External services setup (Sentry, GitHub, Email)
+- [Caching & Performance](./docs/CACHING_AND_PERFORMANCE.md) - Optimization strategies
 - [API Reference](./docs/api/reference.md) - HTTP endpoints
 - [Component Library](./docs/components/overview.md) - UI components
 - [Deployment Guide](./docs/deployment/vercel.md) - Production deployment
@@ -152,6 +163,13 @@ npm run build        # Build for production
 npm run start        # Start production server
 npm run lint         # Run ESLint
 npm run type-check   # Run TypeScript checks
+
+# Database commands
+npm run db:generate  # Generate Prisma client
+npm run db:push      # Push schema to database
+npm run db:migrate   # Run migrations
+npm run db:seed      # Seed database with sample data
+npm run db:setup     # Complete database setup
 ```
 
 ### Project Structure
@@ -175,6 +193,27 @@ claude-code-ui-nextjs/
 ```
 
 ## 🔌 API Endpoints
+
+### Monitoring Dashboard
+
+- `GET /api/metrics/overview` - System health overview
+- `GET /api/metrics/sentry` - Error tracking metrics
+- `GET /api/metrics/cicd` - CI/CD pipeline health
+- `GET /api/metrics/conflicts` - Merge conflict tracking
+
+### Reports & Notifications
+
+- `GET /api/reports` - Get scheduled reports
+- `POST /api/reports/generate` - Generate report on-demand
+- `GET /api/reports/history` - Report history with pagination
+- `GET /api/notifications/sse` - Real-time notification stream
+- `GET /api/notifications` - List notifications
+
+### Cache & Performance
+
+- `GET /api/cache` - Cache statistics
+- `DELETE /api/cache?tag=metrics` - Invalidate cache by tag
+- `GET /api/monitoring/performance` - Performance metrics
 
 ### Chat Integration
 

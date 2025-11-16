@@ -1,0 +1,204 @@
+// Prisma schema for Claude Code UI Monitoring System
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Escalation model for tracking error escalations
+model Escalation {
+  id          String   @id @default(cuid())
+  errorId     String   // Sentry error ID or similar
+  title       String
+  description String   @db.Text
+  priority    String   // critical, high, medium, low
+  status      String   // open, in_progress, resolved, failed
+  source      String   // sentry, manual, system
+
+  // Metadata
+  errorCount     Int      @default(0)
+  affectedUsers  Int      @default(0)
+  environment    String?
+  tags           Json?
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  resolvedAt  DateTime?
+
+  // Relations
+  events      EscalationEvent[]
+
+  @@index([status])
+  @@index([priority])
+  @@index([createdAt])
+}
+
+// Event timeline for escalations
+model EscalationEvent {
+  id            String      @id @default(cuid())
+  escalationId  String
+  type          String      // created, updated, resolved, failed, comment
+  description   String      @db.Text
+  metadata      Json?
+
+  createdAt     DateTime    @default(now())
+  createdBy     String?     // User ID or 'system'
+
+  escalation    Escalation  @relation(fields: [escalationId], references: [id], onDelete: Cascade)
+
+  @@index([escalationId])
+  @@index([createdAt])
+}
+
+// Reports model for storing generated reports
+model Report {
+  id          String   @id @default(cuid())
+  name        String
+  frequency   String   // daily, weekly, monthly, one-time
+  format      String   // html, markdown, json
+
+  // Configuration
+  sections    Json     // Array of section names
+  config      Json?    // Additional configuration
+
+  // Content
+  content     String   @db.Text
+  size        Int      // Content size in bytes
+
+  // Period
+  periodStart DateTime
+  periodEnd   DateTime
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+
+  // Relations
+  scheduledReportId String?
+  scheduledReport   ScheduledReport? @relation(fields: [scheduledReportId], references: [id])
+
+  @@index([frequency])
+  @@index([createdAt])
+  @@index([scheduledReportId])
+}
+
+// Scheduled reports configuration
+model ScheduledReport {
+  id          String   @id @default(cuid())
+  name        String
+  description String?  @db.Text
+
+  // Schedule
+  frequency   String   // daily, weekly, monthly
+  schedule    String   // Cron expression
+  enabled     Boolean  @default(true)
+
+  // Configuration
+  format      String   // html, markdown, json
+  sections    Json     // Array of section names
+  recipients  Json?    // Array of email addresses
+  config      Json?    // Additional configuration
+
+  // Execution tracking
+  lastRunAt   DateTime?
+  nextRunAt   DateTime?
+  failCount   Int      @default(0)
+  lastError   String?  @db.Text
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  reports     Report[]
+
+  @@index([enabled])
+  @@index([nextRunAt])
+}
+
+// Merge conflict resolution tracking
+model MergeConflict {
+  id          String   @id @default(cuid())
+
+  // File information
+  filePath    String
+  branch      String
+  baseBranch  String?
+
+  // Resolution
+  strategy    String   // packageLock, packageJson, jsonMerge, etc.
+  status      String   // detected, resolving, resolved, failed
+
+  // Timing
+  detectedAt  DateTime @default(now())
+  resolvedAt  DateTime?
+  duration    Int?     // Resolution time in seconds
+
+  // Metadata
+  conflictSize Int?    // Number of conflicting lines
+  metadata     Json?
+
+  @@index([status])
+  @@index([detectedAt])
+  @@index([strategy])
+}
+
+// System health snapshots
+model HealthSnapshot {
+  id          String   @id @default(cuid())
+
+  // Overall health score (0-100)
+  overallHealth Int
+
+  // Component health
+  services    Json     // Array of service health data
+  metrics     Json     // CPU, memory, disk, network
+
+  // Trends
+  trends      Json     // health, errorRate, performance trends
+
+  // Alerts
+  alerts      Json?    // Active alerts
+
+  // Timestamp
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([overallHealth])
+}
+
+// CI/CD pipeline runs
+model PipelineRun {
+  id          String   @id @default(cuid())
+
+  // Run information
+  externalId  String   @unique  // GitHub run ID, CircleCI build number, etc.
+  source      String   // github, circleci, gitlab, etc.
+  branch      String
+
+  // Status
+  status      String   // success, failed, running, pending
+  conclusion  String?  // Overall conclusion
+
+  // Timing
+  startedAt   DateTime
+  completedAt DateTime?
+  duration    Int?     // Duration in seconds
+
+  // Jobs
+  jobs        Json     // Array of job data
+
+  // Metadata
+  metadata    Json?
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+
+  @@index([status])
+  @@index([startedAt])
+  @@index([branch])
+}
