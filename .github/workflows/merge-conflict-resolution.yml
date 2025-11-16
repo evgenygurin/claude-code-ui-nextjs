@@ -81,7 +81,7 @@ jobs:
           fi
 
           # Также проверим маркеры конфликтов в файлах (исключаем файлы, которые законно содержат эти маркеры)
-          if git grep -l "<<<<<<< HEAD" -- ':!MERGE_CONFLICT_RESOLUTION.md' ':!scripts/merge-conflict-resolver.js' ':!tests/merge-conflicts/*' ':!.github/workflows/merge-conflict-resolution.yml' > conflict_markers.txt 2>/dev/null; then
+          if git grep -l "<<<<<<< HEAD" -- ':!MERGE_CONFLICT_RESOLUTION.md' ':!scripts/merge-conflict-resolver.js' ':!tests/merge-conflicts/*' ':!tests/integration/*' ':!.github/workflows/merge-conflict-resolution.yml' > conflict_markers.txt 2>/dev/null; then
             if [ -s conflict_markers.txt ]; then
               HAS_CONFLICTS=true
               MARKER_FILES=$(cat conflict_markers.txt | tr '\n' ',' | sed 's/,$//')
