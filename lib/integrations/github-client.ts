@@ -251,7 +251,7 @@ export class GitHubClient {
     // Filter PRs with merge conflicts
     const conflictedPRs = pulls.data.filter((pr) => {
       const prDate = new Date(pr.created_at);
-      return prDate >= since && pr.mergeable === false;
+      return prDate >= since && (pr as any).mergeable === false;
     });
 
     const resolvedConflicts = conflictedPRs.filter((pr) => pr.state === 'closed' && pr.merged_at);
