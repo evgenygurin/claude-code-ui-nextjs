@@ -151,7 +151,7 @@ jobs:
           )
 
       - name: Build Project Artifacts
-        if: secrets.VERCEL_TOKEN != ''
+        if: ${{ secrets.VERCEL_TOKEN != '' }}
         run: vercel build --token=${{ secrets.VERCEL_TOKEN }} || (
           echo "❌ Vercel build failed"
           echo "Preview deployment is optional, continuing with CI/CD pipeline"
@@ -160,7 +160,7 @@ jobs:
 
       - name: Deploy Project Artifacts to Vercel
         id: deploy
-        if: secrets.VERCEL_TOKEN != ''
+        if: ${{ secrets.VERCEL_TOKEN != '' }}
         run: |
           url=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}) || {
             echo "❌ Vercel deployment failed"
