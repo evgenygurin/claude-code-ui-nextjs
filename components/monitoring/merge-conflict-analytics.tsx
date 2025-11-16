@@ -43,7 +43,7 @@ export function MergeConflictAnalytics({ isLoading, lastUpdate }: MergeConflictA
     strategyDistribution: {
       packageLock: 0,
       packageJson: 0,
-      jsonMrge: 0,
+      jsonMerge: 0,
       yamlMerge: 0,
       codeMerge: 0,
       documentMerge: 0,

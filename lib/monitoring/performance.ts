@@ -134,7 +134,7 @@ class PerformanceMonitorClass {
    */
   private percentile(sorted: number[], percentile: number): number {
     const index = Math.ceil((percentile / 100) * sorted.length) - 1;
-    return sorted[Math.max(0, index)];
+    return sorted[Math.max(0, index)] ?? 0;
   }
 }
 
