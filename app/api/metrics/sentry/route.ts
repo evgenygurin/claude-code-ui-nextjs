@@ -25,22 +25,20 @@ export async function GET(request: NextRequest) {
         }
 
         // Fetch real data from Sentry
-        const [errorTrends, topErrors, priorityDist, stats] = await Promise.all([
-          sentryClient.getErrorTrends(period),
-          sentryClient.getTopErrors(10, period),
-          sentryClient.calculatePriorityDistribution(period),
+        const days = parseInt(period) || 7;
+        const [errorTrends, topErrors, allIssues, stats] = await Promise.all([
+          sentryClient.getErrorTrends(days),
+          sentryClient.getTopErrors(10),
+          sentryClient.getIssues({ limit: 100 }),
           sentryClient.getProjectStats('24h'),
         ]);
 
-        // Calculate MTTR from top errors
-        const mttr = topErrors.length > 0
-          ? Math.round(
-              topErrors.reduce((sum, error) => {
-                const avgResolution = error.stats?.['24h']?.[0]?.[1] || 0;
-                return sum + avgResolution;
-              }, 0) / topErrors.length / 60 // Convert to minutes
-            )
-          : 0;
+        // Calculate priority distribution from all issues
+        const priorityDist = sentryClient.calculatePriorityDistribution(allIssues);
+
+        // MTTR would require additional Sentry API calls for resolution times
+        // For now, return placeholder value
+        const mttr = 0;
 
         return {
           errorTrends,
@@ -49,14 +47,12 @@ export async function GET(request: NextRequest) {
             id: error.id,
             title: error.title,
             count: error.count,
-            userCount: error.userCount,
+            userCount: error.users,
             lastSeen: error.lastSeen,
-            level: error.level,
-            permalink: error.permalink,
           })),
           mttr,
-          totalErrors24h: stats.total,
-          affectedUsers24h: stats.userCount,
+          totalErrors24h: stats.totalEvents,
+          affectedUsers24h: stats.affectedUsers,
         };
       },
       { ttl: 180, tags: ['metrics', 'sentry'] } // Cache for 3 minutes

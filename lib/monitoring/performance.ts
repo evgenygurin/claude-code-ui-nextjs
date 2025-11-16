@@ -29,7 +29,7 @@ class PerformanceMonitorClass {
   /**
    * Start a performance timer
    */
-  start(name: string): () => void {
+  start(name: string): (tags?: Record<string, string>, metadata?: Record<string, any>) => void {
     const startTime = performance.now();
 
     // Return function to end timing

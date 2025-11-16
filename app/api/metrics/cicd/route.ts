@@ -37,12 +37,9 @@ export async function GET(request: NextRequest) {
           await persistPipelineRuns(cicdHealth.recentRuns);
         }
 
-        // Calculate cache hit rate from job performance
-        const cacheHitRate = jobPerf.length > 0
-          ? Math.round(
-              (jobPerf.filter((job) => job.cacheHit).length / jobPerf.length) * 100
-            )
-          : 0;
+        // Cache hit rate would require additional GitHub Actions API calls
+        // For now, return placeholder value
+        const cacheHitRate = 0;
 
         return {
           pipelineStatus: cicdHealth.pipelineStatus,

@@ -125,7 +125,7 @@ async function calculateMTTR(): Promise<number> {
 
   if (resolvedEscalations.length === 0) return 0;
 
-  const totalResolutionTime = resolvedEscalations.reduce((sum, escalation) => {
+  const totalResolutionTime = resolvedEscalations.reduce((sum: number, escalation: { createdAt: Date; resolvedAt: Date | null }) => {
     if (!escalation.resolvedAt) return sum;
     const resolutionTime = escalation.resolvedAt.getTime() - escalation.createdAt.getTime();
     return sum + resolutionTime;
