@@ -166,7 +166,7 @@
   "author": "Claude Code UI Contributors",
   "license": "MIT",
   "engines": {
-    "node": "20.x",
+    "node": ">=20.0.0",
     "npm": ">=10.0.0"
   }
 }
